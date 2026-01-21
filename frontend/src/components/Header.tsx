@@ -1,9 +1,12 @@
-import React, { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import HeaderDialog from './Header Components/HeaderDialog'
 import { userContext } from '../Context/userContext'
 import connect from '../axios/connect'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGoogle, faMicrosoft } from "@fortawesome/free-brands-svg-icons";
+
 
 const Header = () => {
     const [isRegisterOpen, setIsRegisterOpen] = useState(false)
@@ -65,6 +68,14 @@ const Header = () => {
         }
     }
 
+    const loginWithGoogle = () => {
+    window.location.href = "http://localhost:8000/api/auth/google/login/"
+  }
+
+  const loginWithMicrosoft = () => {
+    window.location.href = "http://localhost:8000/api/auth/microsoft/login/"
+  }
+
     return (
         <>
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
@@ -104,6 +115,14 @@ const Header = () => {
                                         />
                                         <button className="h-10 w-full rounded-md bg-primary text-primary-foreground text-sm font-medium">
                                             Login
+                                        </button>
+
+                                        <button type="button" onClick={loginWithGoogle}>
+                                            <FontAwesomeIcon icon={faGoogle} /> Google
+                                        </button>
+
+                                        <button type="button" onClick={loginWithMicrosoft}>
+                                            <FontAwesomeIcon icon={faMicrosoft} /> Microsoft
                                         </button>
                                     </form>
                                 </HeaderDialog>
