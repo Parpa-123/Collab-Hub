@@ -2,16 +2,24 @@ import React, { createContext, useEffect, type Dispatch, type SetStateAction } f
 import connect from '../axios/connect';
 
 interface UserContextType {
-    login: boolean;
-    setLogin: Dispatch<SetStateAction<boolean>>;
+    login: User | null;
+    setLogin: Dispatch<SetStateAction<User | null>>;
     refreshUser: () => Promise<void>;
 }
 
-const userContext = createContext<UserContextType>({ login: false, setLogin: () => { }, refreshUser: () => Promise.resolve() });
+export interface User {
+  pk: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+
+const userContext = createContext<UserContextType>({ login: null, setLogin: () => { }, refreshUser: () => Promise.resolve() });
 
 const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
 
-    const [login, setLogin] = React.useState<boolean>(false);
+    const [login, setLogin] = React.useState<User | null>(null);
 
     const refreshLogin = async () => {
         try {
@@ -19,12 +27,12 @@ const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
                 withCredentials: true
             });
             if (res.status === 200) {
-                setLogin(true)
+                setLogin(res.data)
             }else{
-                setLogin(false)
+                setLogin(null)
             }
         } catch (error) {
-            setLogin(false)
+            setLogin(null)
         }
     };  
 
