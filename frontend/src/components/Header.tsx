@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom"
 import { userContext } from "../Context/userContext"
 import connect from "../axios/connect"
 import AuthDialog from "../components/Header Components/AuthHeader"
+import axios from "axios"
 
 import logo from "../assets/svg-ai-collabhub-2026-01-23.svg"
 
@@ -37,7 +38,11 @@ const Header = () => {
       // After successful signup → go to login form
       setIsAuthOpen(true)
     } catch (error) {
-      console.error(error)
+      if (axios.isAxiosError(error)) {
+        console.error(error.response?.status, error.response?.data)
+      } else {
+        console.error(error)
+      }
     }
   }
 
@@ -51,10 +56,14 @@ const Header = () => {
       localStorage.setItem("accessToken", res.data.access)
       localStorage.setItem("refreshToken", res.data.refresh)
 
-      setLogin(true)
+      setLogin(res.data)
       setIsAuthOpen(false)
     } catch (error) {
-      console.error(error)
+      if (axios.isAxiosError(error)) {
+        console.error(error.response?.status, error.response?.data)
+      } else {
+        console.error(error)
+      }
     }
   }
 
@@ -84,12 +93,12 @@ const Header = () => {
               />
             ) : (
               <button className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                Hello
+                {login.first_name} {login.last_name}
               </button>
             )}
           </div>
         </div>
-      </header>
+      </header >
 
       <Outlet />
     </>

@@ -15,15 +15,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ['email', 'first_name', 'last_name', 'password']
 
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(
-            **validated_data
-        )
+        password = validated_data.pop('password')
+        user = CustomUser.objects.create_user(password=password, **validated_data)
         return user
     
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError('Password must be at least 8 characters long')
         return value
+
+    def validate_bio(self, value):
+        if len(value) > 500:
+            raise serializers.ValidationError('Bio must be at most 500 characters long')
+        return value
+
+    def update_password(self, instance, validated_data):
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+    
+    
     
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -44,18 +55,4 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class AutenticatedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['email', 'password', 'first_name', 'last_name']
-
-    def update(self, instance, validated_data):
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
-        password = validated_data.pop('password', None)
-        if password:
-            instance.set_password(password)
-        instance.save()
-        return instance
-
-    def validate_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError('Password must be at least 8 characters long')
-        return value
+        fields = ['email', 'first_name', 'last_name', 'bio']

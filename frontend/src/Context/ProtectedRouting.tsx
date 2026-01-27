@@ -1,9 +1,14 @@
 import React, { useContext } from 'react'
 import { userContext } from './userContext'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
 const ProtectedRouting = ({ children }: { children: React.ReactNode }) => {
-    const { login } = useContext(userContext);
+    const { login, isLoading } = useContext(userContext);
+
+    if (isLoading) {
+        return <div>Loading...</div>; // Or a proper loading spinner component
+    }
+
     return (
         <>
             {login ? children : <Navigate to="/" />}

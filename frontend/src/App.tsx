@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import { UserContextProvider } from "./Context/userContext";
 import ProtectedRouting from "./Context/ProtectedRouting";
+import UserProfile from "./components/Profile Components/UserProfile";
+
 function App() {
 
   return (
@@ -10,8 +12,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Header />}>
             <Route index element={<h1>Home</h1>} />
-            <Route path="about" element={<h1>About</h1>} />
-            <Route path="me" element={<ProtectedRouting><h1>Protected</h1></ProtectedRouting>} /> 
+            <Route path="profile" element={<ProtectedRouting><UserProfile /></ProtectedRouting>} />
           </Route>
         </Routes>
       </UserContextProvider>
