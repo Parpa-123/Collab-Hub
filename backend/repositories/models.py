@@ -30,7 +30,7 @@ class Repository(CommonModel):
 
 class RepositoryMember(CommonModel):
     class Role(models.TextChoices):
-        ADMIN = "admin", "Admin"
+        REPO_ADMIN = "admin", "Admin"
         MAINTAINER = "maintainer", "Maintainer"
         MEMBER = "member", "Member"
 

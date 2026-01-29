@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom"
 
 
 const ProfileRepositories = () => {
+    const nav = useNavigate();
     return (
         <div className="py-6">
             <div className="flex flex-col sm:flex-row gap-4 border-b pb-4 border-gray-200">
@@ -43,7 +45,7 @@ const ProfileRepositories = () => {
                         <option value="stars">Stars</option>
                     </select>
 
-                    <button className="rounded-md bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700 flex items-center gap-2">
+                    <button onClick={() => nav('/new')} className="rounded-md bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700 flex items-center gap-2">
                         <span>New</span>
                     </button>
                 </div>

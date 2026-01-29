@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Repository, RepositoryMember
 from .serializers import RepositoryCreateSerializer, ViewRepositorySerializer
-from .permissions import IsRepositoryOwner, IsRepositoryMember, IsMaintainer
+from .permissions import IsRepositoryAdmin, IsRepositoryMember, IsMaintainer
 from django.db import transaction
 
 
@@ -24,7 +24,7 @@ class RepositoryViewSet(ModelViewSet):
             RepositoryMember.objects.create(
                 repository=repository,
                 user=self.request.user,
-                role=RepositoryMember.Role.OWNER
+                role=RepositoryMember.Role.REPO_ADMIN
             )
 
 class RepositoryDetailView(ModelViewSet):
@@ -39,7 +39,7 @@ class RepositoryDetailView(ModelViewSet):
         if self.action in ["update", "partial_update"]:
             return [IsMaintainer(), IsAuthenticated()]
         if self.action == "destroy":
-            return [IsRepositoryOwner(), IsAuthenticated()]
+            return [IsRepositoryAdmin(), IsAuthenticated()]
         return super().get_permissions()
     
 
