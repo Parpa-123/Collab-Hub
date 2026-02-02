@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "accounts",
     "repositories",
     "common",
+    "branches",
     "dj_rest_auth",
     "dj_rest_auth.registration",
     'rest_framework_simplejwt.token_blacklist',

@@ -23,7 +23,7 @@ class RepositoryViewSet(ModelViewSet):
             repository = serializer.save(owner=self.request.user)
             RepositoryMember.objects.create(
                 repository=repository,
-                user=self.request.user,
+                developer=self.request.user,
                 role=RepositoryMember.Role.REPO_ADMIN
             )
 

@@ -1,6 +1,6 @@
 
 
-const ProfileDetails = () => {
+const ProfileDetails = ({repos} : {repos : number}) => {
     return (
         <div className="bg-white border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -14,7 +14,7 @@ const ProfileDetails = () => {
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="border rounded-lg p-4 text-center">
-                    <p className="text-2xl font-semibold text-gray-900">0</p>
+                    <p className="text-2xl font-semibold text-gray-900">{repos}</p>
                     <p className="text-sm text-gray-600">Repositories</p>
                 </div>
 

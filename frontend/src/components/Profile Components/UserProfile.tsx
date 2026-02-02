@@ -5,12 +5,32 @@ import ProfileDetailNav from "./ProfileDetailNav"
 import UpdateProfile from "./UpdateProfile"
 import ProfileDetails from "./ProfileDetails"
 import ProfileRepositories from "./ProfileRepositories"
+import connect from "../../axios/connect";
+import { useEffect } from "react";
+
+export interface RepoStruct{
+    name: string;
+    description : string;
+    visibility : string;
+}
 
 const UserProfile = () => {
   const { login } = useContext(userContext)
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
+  const [repos,setRepos] = useState<RepoStruct[]>([]);
+
+  useEffect(() => {
+    (async () => {
+        try {
+            const res = await connect.get('/repositories/');
+            setRepos(res.data);
+        } catch (error) {
+            console.error('Error fetching repositories:', error);
+        }
+    })();
+}, []);
 
   if (!login) return null
 
@@ -54,8 +74,8 @@ const UserProfile = () => {
 
           {/* Right column */}
           <div className="md:col-span-3">
-            {tab === "overview" && <ProfileDetails />}
-            {tab === "repositories" && <ProfileRepositories />}
+            {tab === "overview" && <ProfileDetails repos={repos.length}/>}
+            {tab === "repositories" && <ProfileRepositories repos={repos}/>}
           </div>
         </div>
 

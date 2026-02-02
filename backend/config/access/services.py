@@ -1,10 +1,23 @@
+from repositories.models import RepositoryMember
+from .permissions import has_permission
 
-def repo_membership(user, repo):
-    return next(
-        (m for m in repo.repositoryMembers if m.developer == user),
-        None
-    )
+
+def get_repo_membership(user, repo):
+    """Get the repository membership for a user."""
+    if not user or not user.is_authenticated:
+        return None
+    return RepositoryMember.objects.filter(developer=user, repository=repo).first()
+
 
 def get_repo_role(user, repo):
-    m = repo_membership(user, repo)
-    return m.role if m else None
+    """Get the user's role in a repository."""
+    membership = get_repo_membership(user, repo)
+    return membership.role if membership else None
+
+
+def can_perform_action(user, repo, action):
+    """Check if a user can perform a specific action on a repository."""
+    role = get_repo_role(user, repo)
+    if not role:
+        return False
+    return has_permission(role, action)

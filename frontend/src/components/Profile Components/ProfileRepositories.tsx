@@ -1,7 +1,13 @@
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"
+import type { RepoStruct } from "./UserProfile";
 
 
-const ProfileRepositories = () => {
+
+
+
+
+const ProfileRepositories = ({ repos }: { repos: RepoStruct[] }) => {
     const nav = useNavigate();
     return (
         <div className="py-6">
@@ -23,7 +29,7 @@ const ProfileRepositories = () => {
                         <option value="all">Type: All</option>
                         <option value="public">Public</option>
                         <option value="private">Private</option>
-                        
+
                     </select>
 
                     <select name="membership" id="membership" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm bg-gray-50 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -32,7 +38,7 @@ const ProfileRepositories = () => {
                         <option value="viewer">Viewer</option>
                     </select>
 
-                    
+
 
                     <select
                         name="sort"
@@ -52,7 +58,32 @@ const ProfileRepositories = () => {
             </div>
 
             <div className="divide-y divide-gray-200">
-                
+                {repos.map((repo) => (
+                    <div key={repo.name} className="py-6 first:pt-0">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <a href="#" className="text-xl font-semibold text-blue-600 hover:underline">
+                                    {repo.name}
+                                </a>
+                                <span className={`px-2 py-0.5 text-xs border rounded-full font-medium ${repo.visibility === 'public'
+                                        ? 'border-green-500 text-green-700'
+                                        : 'border-yellow-500 text-yellow-700'
+                                    }`}>
+                                    {repo.visibility.charAt(0).toUpperCase() + repo.visibility.slice(1)}
+                                </span>
+                            </div>
+                        </div>
+                        {repo.description && (
+                            <p className="mt-2 text-gray-600 text-sm max-w-3xl">
+                                {repo.description}
+                            </p>
+                        )}
+                        <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                            {/* Placeholder for language and update time if available later */}
+                            {/* <span>Updated recently</span> */}
+                        </div>
+                    </div>
+                ))}
             </div>
 
         </div>

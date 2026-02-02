@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from 'react'
 import { userContext } from '../Context/userContext'
 import connect from '../axios/connect';
+import { useNavigate } from 'react-router-dom';
 
 interface VisibilityOption {
   value: string;
@@ -11,6 +12,7 @@ const Repo = () => {
   const { login } = useContext(userContext);
   const [visibilityOptions, setVisibilityOptions] = React.useState<VisibilityOption[]>([]);
   const [visibility, setVisibility] = React.useState<string>('public');
+  const nav = useNavigate();
 
   useEffect(() => {
     (async () => {
@@ -34,6 +36,7 @@ const Repo = () => {
         description,
         visibility
       });
+      nav("profile?tab=repositories");
     } catch (error) {
       console.error('Error creating repository:', error);
     }

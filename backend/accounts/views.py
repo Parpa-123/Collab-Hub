@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomUserSerializer, CustomTokenObtainPairSerializer, AutenticatedUserSerializer
+from .models import CustomUser
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,6 +13,10 @@ from rest_framework.mixins import CreateModelMixin, UpdateModelMixin
 class CustomUserCreate(GenericAPIView, CreateModelMixin, UpdateModelMixin):
     
     serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+
+    def get_object(self):
+        return self.request.user
 
     def get_permissions(self):
         if self.request.method == 'POST':
