@@ -13,9 +13,9 @@ class CanManageBranches(BasePermission):
     
     def has_permission(self, request, view):
         """Check permission for list/create actions."""
-        repository_pk = view.kwargs.get('repository_pk')
+        slug = view.kwargs.get('slug')
         try:
-            repository = Repository.objects.get(pk=repository_pk)
+            repository = Repository.objects.get(slug=slug)
         except Repository.DoesNotExist:
             return False
         
@@ -50,9 +50,9 @@ class BranchesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, CanManageBranches]
 
     def get_queryset(self):
-        return Branches.objects.filter(repository=self.kwargs['repository_pk'])
+        return Branches.objects.filter(repository__slug=self.kwargs['slug'])
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['repository'] = self.kwargs.get('repository_pk')
+        context['repository'] = self.kwargs.get('slug')
         return context

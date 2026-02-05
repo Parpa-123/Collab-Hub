@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import type { RepoStruct } from "./UserProfile";
 
 
@@ -62,9 +62,9 @@ const ProfileRepositories = ({ repos }: { repos: RepoStruct[] }) => {
                     <div key={repo.name} className="py-6 first:pt-0">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <a href="#" className="text-xl font-semibold text-blue-600 hover:underline">
+                                <Link to={`/${repo.slug}`} className="text-xl font-semibold text-blue-600 hover:underline">
                                     {repo.name}
-                                </a>
+                                </Link>
                                 <span className={`px-2 py-0.5 text-xs border rounded-full font-medium ${repo.visibility === 'public'
                                         ? 'border-green-500 text-green-700'
                                         : 'border-yellow-500 text-yellow-700'

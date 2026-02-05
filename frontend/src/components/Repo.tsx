@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from 'react'
 import { userContext } from '../Context/userContext'
 import connect from '../axios/connect';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 
 interface VisibilityOption {
   value: string;
@@ -10,6 +10,7 @@ interface VisibilityOption {
 
 const Repo = () => {
   const { login } = useContext(userContext);
+  const { slug } = useParams();
   const [visibilityOptions, setVisibilityOptions] = React.useState<VisibilityOption[]>([]);
   const [visibility, setVisibility] = React.useState<string>('public');
   const nav = useNavigate();
@@ -42,6 +43,12 @@ const Repo = () => {
     }
   }
 
+  // If we have a slug, we're viewing an existing repository - render child routes
+  if (slug) {
+    return <Outlet />;
+  }
+
+  // Otherwise, render the create repository form
   return (
     <div className="min-h-screen bg-[#f6f8fa] pt-8 pb-12 px-4 md:px-0 font-sans text-[#1f2328]">
       <div className="max-w-[760px] mx-auto">
@@ -90,7 +97,7 @@ const Repo = () => {
             </div>
           </div>
 
-          
+
 
           {/* Description */}
           <div className="mb-8">

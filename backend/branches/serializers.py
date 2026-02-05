@@ -12,16 +12,18 @@ class BranchesSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'is_protected',
+            'is_default',
         ]
         read_only_fields = ['id']
 
     def create(self, validated_data):
         """Create and return a new Branches instance."""
         request = self.context.get('request')
-        repository_pk = self.context.get('repository')
+        repository_slug = self.context.get('repository')
         
         try:
-            repository = Repository.objects.get(pk=repository_pk)
+            repository = Repository.objects.get(slug=repository_slug)
         except Repository.DoesNotExist:
             raise ValidationError({'repository': 'Repository not found.'})
         

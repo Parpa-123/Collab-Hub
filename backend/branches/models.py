@@ -5,6 +5,7 @@ from common.models import CommonModel
 class Branches(CommonModel):
     name = models.CharField(max_length=100)
     repository = models.ForeignKey('repositories.Repository', on_delete=models.CASCADE, related_name='branches')
+    is_default = models.BooleanField(default=False)
     is_protected = models.BooleanField(default=False)
     created_by = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE)
     created_from = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)

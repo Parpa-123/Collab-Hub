@@ -73,12 +73,18 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounts.middleware.JWTCookieMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
     "http://localhost:5173",
 ]
 
@@ -99,6 +105,10 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+
+# Redirect after OAuth login - goes to frontend
+LOGIN_REDIRECT_URL = "http://localhost:5173/"
+LOGOUT_REDIRECT_URL = "http://localhost:5173/"
 
 ROOT_URLCONF = "config.urls"
 
@@ -128,7 +138,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "accounts.exceptions.custom_exception_handler",
 
 }
-SITE_ID = 1
+SITE_ID = 2  # localhost:8000 for development
 CORS_ALLOW_CREDENTIALS = True
 
 
@@ -215,9 +225,17 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
-REST_USE_JWT = True
-JWT_AUTH_COOKIE = "access"
-JWT_AUTH_REFRESH_COOKIE = "refresh"
+
+
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'access',
+    'JWT_AUTH_REFRESH_COOKIE': 'refresh',
+    'JWT_AUTH_HTTPONLY': True,
+    'JWT_AUTH_SAMESITE': 'Lax',
+    'JWT_AUTH_SECURE': False,
+    'SESSION_LOGIN': False,
+}
 
 
 # SECURE_SSL_REDIRECT = True

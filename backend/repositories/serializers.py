@@ -16,11 +16,23 @@ class RepositoryCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Description must be less than 255 characters")
         return attrs
 
-    
-class ViewRepositorySerializer(serializers.ModelSerializer):
+class RepositoryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Repository
-        fields = ["name", "description", "visibility", "default_branch", "created_at", "updated_at"]
+        fields = ["name", "description", "visibility", "slug"]
+
+class ViewRepositorySerializer(serializers.ModelSerializer):
+    branches = serializers.SerializerMethodField()
+    branch_names = serializers.SerializerMethodField()
+    class Meta:
+        model = Repository
+        fields = ["name", "description", "visibility", "default_branch", "branches", "branch_names"]
+    
+    def get_branches(self, obj: Repository) -> int:
+        return obj.branches.count()
+
+    def get_branch_names(self, obj: Repository) -> list[str]:
+        return [branch.name for branch in obj.branches.all()]
 
     def update(self, instance, validated_data):
         name = validated_data.get("name")

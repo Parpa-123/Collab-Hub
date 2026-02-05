@@ -12,6 +12,7 @@ export interface RepoStruct{
     name: string;
     description : string;
     visibility : string;
+    slug?: string;
 }
 
 const UserProfile = () => {

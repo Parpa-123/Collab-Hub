@@ -6,6 +6,7 @@ const connect = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+    withCredentials: true, 
 });
 
 let isRefreshing = false;
@@ -54,7 +55,7 @@ connect.interceptors.response.use(
             } finally {
                 isRefreshing = false;
             }
-        }else if (error.response?.status === 403) {
+        } else if (error.response?.status === 403) {
             console.error('403 Forbidden:', error.response.data);
         }
         return Promise.reject(error);
