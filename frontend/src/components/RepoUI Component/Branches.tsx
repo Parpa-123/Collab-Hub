@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import connect from '../../axios/connect';
 import { useParams } from 'react-router-dom';
 import BranchesCreation from './BranchesCreation';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Trash2, Pencil } from 'lucide-react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 interface Branch {
   id: number;
   name: string;
   is_protected: boolean;
   is_default: boolean;
+  updated_on: string;
 }
 
 const Branches = () => {
@@ -37,10 +42,36 @@ const Branches = () => {
       };
 
       await connect.post(`/repositories/${slug}/branches/`, payload);
-      // Refresh branches list after creation
       fetchBranches();
     } catch (error) {
       console.error('Error creating branch:', error);
+    }
+  };
+
+  const handleDeleteBranch = async (branchId: number, branchName: string) => {
+    if (!window.confirm(`Are you sure you want to delete branch "${branchName}"?`)) return;
+
+    try {
+      await connect.delete(`/repositories/${slug}/branches/${branchId}/`);
+      setBranches((prev) => prev.filter((b) => b.id !== branchId));
+    } catch (error: any) {
+      console.error('Error deleting branch:', error);
+      alert(error.response?.data?.message || 'Failed to delete branch');
+    }
+  };
+
+  const handleUpdateBranch = async (id: number, formData: FormData) => {
+    try {
+      const payload = {
+        name: formData.get('name') as string,
+        is_protected: formData.get('is_protected') === 'on',
+        is_default: formData.get('is_default') === 'on',
+      };
+      await connect.patch(`/repositories/${slug}/branches/${id}/`, payload);
+      fetchBranches();
+    } catch (error) {
+      console.error('Error updating branch:', error);
+      alert('Failed to update branch');
     }
   };
 
@@ -92,10 +123,39 @@ const Branches = () => {
                 )}
               </div>
 
-              {/* Right side: timestamp */}
-              <span className="text-xs text-[#636c76]">
-                Updated recently
-              </span>
+              {/* Right side: timestamp + delete */}
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-[#636c76]">
+                  Updated {dayjs(branch.updated_on).fromNow()}
+                </span>
+
+
+                {!branch.is_default && (
+                  <>
+                    <BranchesCreation
+                      mode="edit"
+                      initialData={branch}
+                      branchlist={branches.map((b) => b.name)}
+                      onUpdateBranch={handleUpdateBranch}
+                      trigger={
+                        <button
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Edit branch"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      }
+                    />
+                    <button
+                      onClick={() => handleDeleteBranch(branch.id, branch.name)}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Delete branch"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
 

@@ -10,11 +10,27 @@ import {
 import { GitBranch, Copy, ChevronDown, GitBranchPlus } from 'lucide-react';
 
 interface BranchesCreationProps {
-    onCreateBranch: (formData: FormData) => void;
+    onCreateBranch?: (formData: FormData) => void;
+    onUpdateBranch?: (id: number, formData: FormData) => void;
     branchlist: string[];
+    initialData?: {
+        id: number;
+        name: string;
+        is_protected: boolean;
+        is_default: boolean;
+    };
+    mode?: 'create' | 'edit';
+    trigger?: React.ReactNode;
 }
 
-const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps) => {
+const BranchesCreation = ({
+    onCreateBranch,
+    onUpdateBranch,
+    branchlist,
+    initialData,
+    mode = 'create',
+    trigger
+}: BranchesCreationProps) => {
     const formRef = useRef<HTMLFormElement>(null);
     const [open, setOpen] = useState(false);
 
@@ -22,8 +38,12 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
         e.preventDefault();
         if (formRef.current) {
             const formData = new FormData(formRef.current);
-            onCreateBranch(formData);
-            formRef.current.reset();
+            if (mode === 'create' && onCreateBranch) {
+                onCreateBranch(formData);
+            } else if (mode === 'edit' && onUpdateBranch && initialData) {
+                onUpdateBranch(initialData.id, formData);
+            }
+            if (mode === 'create') formRef.current.reset();
             setOpen(false);
         }
     };
@@ -31,14 +51,18 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <button className="bg-[#1f883d] text-white px-4 py-[5px] rounded-md font-medium text-sm hover:bg-[#1a7f37] transition-colors shadow-sm flex items-center gap-2">
-                    <GitBranchPlus className="w-4 h-4" />
-                    New branch
-                </button>
+                {trigger ? trigger : (
+                    <button className="bg-[#1f883d] text-white px-4 py-[5px] rounded-md font-medium text-sm hover:bg-[#1a7f37] transition-colors shadow-sm flex items-center gap-2">
+                        <GitBranchPlus className="w-4 h-4" />
+                        New branch
+                    </button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px] bg-white border-[#d0d7de] p-0" showCloseButton={false}>
                 <DialogHeader className="p-4 border-b border-[#d0d7de]">
-                    <DialogTitle className="text-base font-semibold text-[#1f2328]">Create a branch</DialogTitle>
+                    <DialogTitle className="text-base font-semibold text-[#1f2328]">
+                        {mode === 'create' ? 'Create a branch' : 'Edit branch'}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <form ref={formRef} onSubmit={handleSubmit}>
@@ -54,6 +78,7 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
                                     name="name"
                                     type="text"
                                     required
+                                    defaultValue={initialData?.name}
                                     placeholder="feature/my-new-branch"
                                     className="w-full px-3 py-[5px] bg-[#f6f8fa] border border-[#d0d7de] rounded-md shadow-sm text-sm text-[#1f2328] focus:outline-none focus:border-[#0969da] focus:ring-1 focus:ring-[#0969da] pr-10"
                                     autoFocus
@@ -73,31 +98,34 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
                         </div>
 
                         {/* Source Branch Selector */}
-                        <div className="space-y-2">
-                            <label htmlFor="source" className="text-sm font-semibold text-[#1f2328] block">
-                                Source
-                            </label>
-                            <div className="relative inline-block">
-                                <div className="flex items-center gap-2 px-3 py-[5px] bg-[#f6f8fa] border border-[#d0d7de] rounded-md shadow-sm text-sm">
-                                    <GitBranch className="w-4 h-4 text-[#636c76]" />
-                                    <select
-                                        name="source"
-                                        id="source"
-                                        defaultValue={branchlist[0] || 'main'}
-                                        className="bg-transparent border-none text-sm text-[#1f2328] focus:outline-none cursor-pointer pr-6 appearance-none"
-                                    >
-                                        {branchlist.length > 0 ? (
-                                            branchlist.map((branch) => (
-                                                <option key={branch} value={branch}>{branch}</option>
-                                            ))
-                                        ) : (
-                                            <option value="main">main</option>
-                                        )}
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 text-[#636c76] absolute right-2" />
+                        {/* Source Branch Selector - Hide in Edit Mode */}
+                        {mode === 'create' && (
+                            <div className="space-y-2">
+                                <label htmlFor="source" className="text-sm font-semibold text-[#1f2328] block">
+                                    Source
+                                </label>
+                                <div className="relative inline-block">
+                                    <div className="flex items-center gap-2 px-3 py-[5px] bg-[#f6f8fa] border border-[#d0d7de] rounded-md shadow-sm text-sm">
+                                        <GitBranch className="w-4 h-4 text-[#636c76]" />
+                                        <select
+                                            name="source"
+                                            id="source"
+                                            defaultValue={branchlist[0] || 'main'}
+                                            className="bg-transparent border-none text-sm text-[#1f2328] focus:outline-none cursor-pointer pr-6 appearance-none"
+                                        >
+                                            {branchlist.length > 0 ? (
+                                                branchlist.map((branch) => (
+                                                    <option key={branch} value={branch}>{branch}</option>
+                                                ))
+                                            ) : (
+                                                <option value="main">main</option>
+                                            )}
+                                        </select>
+                                        <ChevronDown className="w-4 h-4 text-[#636c76] absolute right-2" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Branch Options */}
                         <div className="space-y-3 pt-2">
@@ -108,6 +136,7 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
                                         id="is_default"
                                         name="is_default"
                                         type="checkbox"
+                                        defaultChecked={initialData?.is_default}
                                         className="h-4 w-4 border-[#d0d7de] rounded text-[#0969da] focus:ring-[#0969da]"
                                     />
                                 </div>
@@ -128,6 +157,7 @@ const BranchesCreation = ({ onCreateBranch, branchlist }: BranchesCreationProps)
                                         id="is_protected"
                                         name="is_protected"
                                         type="checkbox"
+                                        defaultChecked={initialData?.is_protected}
                                         className="h-4 w-4 border-[#d0d7de] rounded text-[#0969da] focus:ring-[#0969da]"
                                     />
                                 </div>

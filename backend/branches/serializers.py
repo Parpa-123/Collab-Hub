@@ -7,6 +7,8 @@ from repositories.models import Repository
 class BranchesSerializer(serializers.ModelSerializer):
     """Serializer for the Branches model."""
 
+    updated_on = serializers.DateTimeField(source='updated_at', read_only=True)
+
     class Meta:
         model = Branches
         fields = [
@@ -14,8 +16,9 @@ class BranchesSerializer(serializers.ModelSerializer):
             'name',
             'is_protected',
             'is_default',
+            'updated_on',
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'updated_on']
 
     def create(self, validated_data):
         """Create and return a new Branches instance."""

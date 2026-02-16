@@ -25,6 +25,10 @@ class CanManageBranches(BasePermission):
         
         if request.method == 'POST':
             return can_perform_action(request.user, repository, CREATE_BRANCH)
+            
+        if request.method in ['DELETE', 'PUT', 'PATCH']:
+            from config.access.services import get_repo_membership
+            return get_repo_membership(request.user, repository) is not None
         
         return False
     

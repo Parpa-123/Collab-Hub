@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/auth/", include("allauth.urls")),
     path("api/repositories/", include("repositories.urls")),
     path("api/repositories/<slug:slug>/branches/", include("branches.urls")),
+    path("api/repositories/<slug:slug>/", include("issues.urls")),
 
     # OpenAPI schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

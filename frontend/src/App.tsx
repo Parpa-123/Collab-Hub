@@ -9,6 +9,7 @@ import Code from "./components/RepoUI Component/Code";
 import Branches from "./components/RepoUI Component/Branches";
 import PullRequest from "./components/RepoUI Component/PullRequest";
 import Issues from "./components/RepoUI Component/Issues";
+import IssueDetail from "./components/RepoUI Component/IssueDetail";
 
 function App() {
 
@@ -25,6 +26,7 @@ function App() {
               <Route path="branches" element={<ProtectedRouting><Branches /></ProtectedRouting>} />
               <Route path="pullrequests" element={<ProtectedRouting><PullRequest /></ProtectedRouting>} />
               <Route path="issues" element={<ProtectedRouting><Issues /></ProtectedRouting>} />
+              <Route path="issues/:id" element={<ProtectedRouting><IssueDetail /></ProtectedRouting>} />
             </Route>
           </Route>
         </Routes>

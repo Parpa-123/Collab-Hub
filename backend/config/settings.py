@@ -57,10 +57,12 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.microsoft',
     "allauth.socialaccount.providers.google",
     
+    
     "accounts",
     "repositories",
     "common",
     "branches",
+    "issues",
     "dj_rest_auth",
     "dj_rest_auth.registration",
     'rest_framework_simplejwt.token_blacklist',
@@ -135,6 +137,9 @@ REST_FRAMEWORK = {
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
     "EXCEPTION_HANDLER": "accounts.exceptions.custom_exception_handler",
 
 }

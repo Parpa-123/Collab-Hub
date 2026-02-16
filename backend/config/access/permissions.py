@@ -17,11 +17,13 @@ REPO_ROLE_PERMISSIONS = {
         INVITE_USER,
         CREATE_PR,
         CREATE_ISSUE,
+        UPDATE_ISSUE,
         CLOSE_ISSUE,
         COMMENT,
         CREATE_BRANCH,
         DELETE_BRANCH,
         PROTECT_BRANCH,
+        UPDATE_ROLE,
     },
 
     REPO_MAINTAINER:{
@@ -30,10 +32,12 @@ REPO_ROLE_PERMISSIONS = {
         INVITE_USER,
         CREATE_PR,
         CREATE_ISSUE,
+        UPDATE_ISSUE,
         CLOSE_ISSUE,
         COMMENT,
         CREATE_BRANCH,
         DELETE_BRANCH,
+        UPDATE_ROLE,
     },
     REPO_MEMBER:{
         CREATE_ISSUE,

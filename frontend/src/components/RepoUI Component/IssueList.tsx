@@ -1,0 +1,85 @@
+import { Circle, MessageSquare, Trash2 } from "lucide-react";
+import type { Issue } from "./Issues";
+import { Link } from "react-router-dom";
+
+interface IssueListProps {
+    issues: Issue[];
+    loading: boolean;
+    onDelete: (id: number) => void;
+}
+
+const IssueList: React.FC<IssueListProps> = ({
+    issues,
+    loading,
+    onDelete,
+}) => {
+    if (loading) {
+        return (
+            <div className="p-6 text-center text-gray-500">Loading issues...</div>
+        );
+    }
+
+    if (issues.length === 0) {
+        return (
+            <div className="p-6 text-center text-gray-500">No issues found.</div>
+        );
+    }
+
+    return (
+        <div className="divide-y divide-gray-200">
+            {issues.map((issue) => (
+                <div
+                    key={issue.id}
+                    className="flex justify-between items-start p-4 hover:bg-gray-50"
+                >
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <Circle size={14} className="text-green-500 fill-green-500" />
+                            <Link to={`${issue.id}`} className="font-semibold text-gray-900">{issue.title}</Link>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-2">
+                            {issue.labels.map((label) => (
+                                <span
+                                    key={label.id}
+                                    className="px-2 py-0.5 text-xs font-medium rounded-full text-white"
+                                    style={{ backgroundColor: `#${label.color}` }}
+                                >
+                                    {label.name}
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="text-xs text-gray-500 mt-2">
+                            #{issue.id} opened {new Date(issue.created_at).toLocaleString()}{" "}
+                            by{" "}
+                            <span className="font-medium">
+                                {issue.creator
+                                    ? issue.creator.first_name || issue.creator.last_name
+                                        ? `${issue.creator.first_name} ${issue.creator.last_name}`
+                                        : issue.creator.email
+                                    : "unknown"}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-gray-500 text-sm">
+                        <div className="flex items-center gap-1">
+                            <MessageSquare size={16} />
+                            <span>{issue.assignees?.length || 0}</span>
+                        </div>
+
+                        <button
+                            onClick={() => onDelete(issue.id)}
+                            className="p-1 hover:text-red-600 hover:bg-red-50 rounded"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export default IssueList;
