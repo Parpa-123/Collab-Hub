@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.microsoft',
     "allauth.socialaccount.providers.google",
     
-    
+    "PullRequest",
     "accounts",
     "repositories",
     "common",
