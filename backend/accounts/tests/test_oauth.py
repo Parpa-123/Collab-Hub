@@ -24,9 +24,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 User = get_user_model()
 
 
-# ═══════════════════════════════════════════════════════════════════════
 #  CustomSocialAccountAdapter
-# ═══════════════════════════════════════════════════════════════════════
 
 class CustomSocialAccountAdapterTest(TestCase):
     """Tests for the CustomSocialAccountAdapter.save_user() logic."""
@@ -99,9 +97,7 @@ class CustomSocialAccountAdapterTest(TestCase):
         self.assertEqual(result.email, "other@example.com")
 
 
-# ═══════════════════════════════════════════════════════════════════════
 #  set_jwt_cookies utility
-# ═══════════════════════════════════════════════════════════════════════
 
 class SetJwtCookiesTest(TestCase):
     """Tests for the set_jwt_cookies() helper function."""
@@ -158,9 +154,8 @@ class SetJwtCookiesTest(TestCase):
         self.assertFalse(response.cookies["access"]["secure"])
 
 
-# ═══════════════════════════════════════════════════════════════════════
+
 #  JWTCookieMiddleware
-# ═══════════════════════════════════════════════════════════════════════
 
 class JWTCookieMiddlewareTest(TestCase):
     """Tests for the JWTCookieMiddleware.process_response() logic."""
@@ -235,9 +230,7 @@ class JWTCookieMiddlewareTest(TestCase):
         self.assertNotIn("access", result.cookies)
 
 
-# ═══════════════════════════════════════════════════════════════════════
 #  Social Login View Configuration
-# ═══════════════════════════════════════════════════════════════════════
 
 class SocialLoginViewConfigTest(TestCase):
     """Tests that social login views are configured correctly."""
@@ -261,9 +254,7 @@ class SocialLoginViewConfigTest(TestCase):
         self.assertEqual(MicrosoftLogin.client_class, OAuth2Client)
 
 
-# ═══════════════════════════════════════════════════════════════════════
 #  CustomUserSerializer
-# ═══════════════════════════════════════════════════════════════════════
 
 class CustomUserSerializerTest(TestCase):
     """Tests for registration serializer validation and creation."""
@@ -405,9 +396,8 @@ class AuthenticatedUserViewTest(TestCase):
         self.assertNotIn("password", response.data)
 
 
-# ═══════════════════════════════════════════════════════════════════════
+
 #  Custom Exception Handler
-# ═══════════════════════════════════════════════════════════════════════
 
 class CustomExceptionHandlerTest(TestCase):
     """Tests for the custom DRF exception handler."""
