@@ -4,91 +4,140 @@ from rest_framework.response import Response
 from django.utils import timezone
 from repositories.permissions import IsMaintainer, IsRepositoryAdmin, IsRepositoryMember
 from repositories.models import Repository
+from branches.models import Branches, Commit
 from .models import PullRequest, Review
 from .serializers import PullRequestSerializer, ReviewSerializer
+from django.db import transaction
 
 
-class PullRequestPermission(permissions.BasePermission):
+from config.access.services import get_repo_membership, get_repo_role
+from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
+
+
+class PullRequestHardenedPermission(permissions.BasePermission):
     def has_permission(self, request, view):
+        slug = view.kwargs.get('slug')
+        try:
+            repository = Repository.objects.get(slug=slug)
+        except Repository.DoesNotExist:
+            return False
+        
+        role = get_repo_role(request.user, repository)
+        if not role:
+            return False
+
         if view.action in ['list', 'retrieve', 'create']:
-            return IsRepositoryMember().has_permission(request, view)
-        if view.action in ['destroy', 'merge']:
-            return IsRepositoryAdmin().has_permission(request, view) or \
-                   IsMaintainer().has_permission(request, view)
-        return False
+            return True
+
+        return True
 
     def has_object_permission(self, request, view, obj):
-        if view.action in ['destroy', 'merge']:
-            return IsRepositoryAdmin().has_permission(request, view) or \
-                   IsMaintainer().has_permission(request, view)
-        return IsRepositoryMember().has_permission(request, view)
+        role = get_repo_role(request.user, obj.repo)
+        
+        if view.action in ['merge', 'approve', 'changes_requested']:
+            if role not in [REPO_ADMIN, REPO_MAINTAINER]:
+                return False
+            if view.action == 'merge' and obj.target_branch.is_protected:
+                return role == REPO_ADMIN
+            return True
+
+        if view.action in ['close', 'reopen']:
+            if obj.created_by == request.user:
+                return True
+            return role in [REPO_ADMIN, REPO_MAINTAINER]
+
+        return role in [REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER]
 
 
 class PullRequestViewSet(viewsets.ModelViewSet):
     serializer_class = PullRequestSerializer
-    permission_classes = [PullRequestPermission]
+    permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
 
     def get_queryset(self):
         return PullRequest.objects.filter(repo__slug=self.kwargs.get('slug'))
 
     def get_object(self):
-        return PullRequest.objects.get(
+        obj = PullRequest.objects.get(
             repo__slug=self.kwargs.get('slug'), pk=self.kwargs.get('pk')
         )
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def perform_create(self, serializer):
         repo = Repository.objects.get(slug=self.kwargs.get('slug'))
-        serializer.save(created_by=self.request.user, repo=repo)
+        target_branch = serializer.validated_data.get('target_branch')
+        base_commit = target_branch.head_commit if target_branch else None
+        serializer.save(created_by=self.request.user, repo=repo, base_commit=base_commit)
 
     @action(detail=True, methods=['post'])
     def merge(self, request, **kwargs):
-        pull_request = self.get_object()
-        if pull_request.can_merge:
-            pull_request.status = 'MERGED'
-            pull_request.merged_by = request.user
-            pull_request.merged_at = timezone.now()
-            pull_request.save()
+        pr = self.get_object()
+        
+        if pr.status != "OPEN":
+            return Response({'error': f'Cannot merge a {pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pr.source_branch_deleted or pr.target_branch_deleted:
+            return Response({'error': 'Source or target branch has been deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pr.has_conflicts:
+            return Response({'error': 'Conflicts detected: Target branch has moved since PR creation'}, status=status.HTTP_400_BAD_REQUEST)
+
+        approvals = pr.reviews.filter(status="APPROVED").count()
+        has_changes_requested = pr.reviews.filter(status="CHANGES_REQUESTED").exists()
+        
+        if has_changes_requested:
+            return Response({'error': 'Cannot merge: There are active changes requested'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if approvals < 1:
+            return Response({'error': 'Cannot merge: At least one approval is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            merge_commit = Commit.objects.create(
+                repository=pr.repo,
+                branch=pr.target_branch,
+                parent=pr.target_branch.head_commit,
+                second_parent=pr.source_branch.head_commit,
+                message=f"Merge pull request #{pr.id} from {pr.source_name}",
+                author=request.user
+            )
+            pr.target_branch.head_commit = merge_commit
+            pr.target_branch.save()
+            
+            pr.status = 'MERGED'
+            pr.merged_at = timezone.now()
+            pr.merged_by = request.user
+            pr.save()
             return Response({'status': 'merged'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot merge'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def close(self, request, **kwargs):
-        pull_request = self.get_object()
-        if pull_request.can_close:
-            pull_request.status = 'CLOSED'
-            pull_request.closed_at = timezone.now()
-            pull_request.save()
-            return Response({'status': 'closed'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot close'}, status=status.HTTP_400_BAD_REQUEST)
+        pr = self.get_object()
+        if pr.status == "CLOSED":
+            return Response({'error': 'Pull request is already closed'}, status=status.HTTP_400_BAD_REQUEST)
+        if pr.status == "MERGED":
+            return Response({'error': 'Cannot close a merged pull request'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        pr.status = 'CLOSED'
+        pr.closed_at = timezone.now()
+        pr.save()
+        return Response({'status': 'closed'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def reopen(self, request, **kwargs):
-        pull_request = self.get_object()
-        if pull_request.can_reopen:
-            pull_request.status = 'OPEN'
-            pull_request.save()
-            return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot reopen'}, status=status.HTTP_400_BAD_REQUEST)
+        pr = self.get_object()
+        if pr.status == "OPEN":
+            return Response({'error': 'Pull request is already open'}, status=status.HTTP_400_BAD_REQUEST)
+        if pr.status == "MERGED":
+            return Response({'error': 'Cannot reopen a merged pull request'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        pr.status = 'OPEN'
+        pr.save()
+        return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
 
-
-class ReviewPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if view.action in ['list', 'retrieve', 'create']:
-            return IsRepositoryMember().has_permission(request, view)
-        if view.action in ['destroy', 'merge']:
-            return IsRepositoryAdmin().has_permission(request, view) or \
-                   IsMaintainer().has_permission(request, view)
-        return False
-
-    def has_object_permission(self, request, view, obj):
-        if view.action in ['destroy', 'merge']:
-            return IsRepositoryAdmin().has_permission(request, view) or \
-                   IsMaintainer().has_permission(request, view)
-        return IsRepositoryMember().has_permission(request, view)
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewPermission]
+    permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
 
     def get_queryset(self):
         return Review.objects.filter(
@@ -97,39 +146,53 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
 
     def get_object(self):
-        return Review.objects.get(
+        obj = Review.objects.get(
             pr__repo__slug=self.kwargs.get('slug'),
             pr__pk=self.kwargs.get('pr_pk'),
             pk=self.kwargs.get('pk')
         )
+        self.check_object_permissions(self.request, obj)
+        return obj
 
-    
     @action(detail=True, methods=['post'])
     def approve(self, request, **kwargs):
         review = self.get_object()
-        if review.can_approve:
-            review.status = 'APPROVED'
-            review.save()
-            return Response({'status': 'approved'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot approve'}, status=status.HTTP_400_BAD_REQUEST)
-    
+        if review.pr.status != 'OPEN':
+            return Response({'error': f'Cannot approve a {review.pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+        if review.reviewer == review.pr.created_by:
+            return Response({'error': 'Authors cannot approve their own pull requests'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if review.status == 'APPROVED':
+            return Response({'error': 'Review is already approved'}, status=status.HTTP_400_BAD_REQUEST)
+
+        review.status = 'APPROVED'
+        review.save()
+        return Response({'status': 'approved'}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'])
     def changes_requested(self, request, **kwargs):
         review = self.get_object()
-        if review.can_approve:
-            review.status = 'CHANGES_REQUESTED'
-            review.save()
-            return Response({'status': 'changes requested'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot request changes'}, status=status.HTTP_400_BAD_REQUEST)
+        if review.pr.status != 'OPEN':
+            return Response({'error': f'Cannot request changes on a {review.pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+        if review.reviewer == review.pr.created_by:
+            return Response({'error': 'Authors cannot request changes on their own pull requests'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if review.status == 'CHANGES_REQUESTED':
+            return Response({'error': 'Changes are already requested in this review'}, status=status.HTTP_400_BAD_REQUEST)
+
+        review.status = 'CHANGES_REQUESTED'
+        review.save()
+        return Response({'status': 'changes requested'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def comment(self, request, **kwargs):
         review = self.get_object()
-        if review.can_approve:
-            review.status = 'COMMENTED'
-            review.save()
-            return Response({'status': 'commented'}, status=status.HTTP_200_OK)
-        return Response({'status': 'cannot comment'}, status=status.HTTP_400_BAD_REQUEST)
+        if review.pr.status != 'OPEN':
+            return Response({'error': f'Cannot comment on a {review.pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        review.status = 'COMMENTED'
+        review.save()
+        return Response({'status': 'commented'}, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         pull_request = PullRequest.objects.get(repo__slug=self.kwargs.get('slug'), pk=self.kwargs.get('pr_pk'))

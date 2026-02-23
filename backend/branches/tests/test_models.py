@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.contrib.auth import get_user_model
 
 from repositories.models import Repository
-from branches.models import Branches
+from branches.models import Branches, Commit
 
 User = get_user_model()
 
@@ -110,3 +110,83 @@ class BranchesConstraintTest(TestCase):
 
     def test_name_max_length(self):
         self.assertEqual(Branches._meta.get_field("name").max_length, 100)
+
+
+class CommitConstraintTest(TestCase):
+    """Tests for the Commit model constraints and cascade deletions."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="commit@example.com", password="pass123",
+            first_name="C", last_name="U",
+        )
+        self.repo = Repository.objects.create(
+            name="Commit Repo", owner=self.user,
+            description="Repo for commits",
+        )
+        self.branch = Branches.objects.create(
+            name="main", repository=self.repo,
+            is_default=True, created_by=self.user,
+        )
+        self.commit = Commit.objects.create(
+            repository=self.repo, branch=self.branch,
+            message="Initial commit", author=self.user,
+            snapshot={"files": ["README.md"]}
+        )
+
+    # ── Basic Creation ────────────────────────────────────────────────
+
+    def test_commit_creation(self):
+        self.assertEqual(self.commit.message, "Initial commit")
+        self.assertEqual(self.commit.author, self.user)
+        self.assertEqual(self.commit.branch, self.branch)
+
+    def test_commit_str(self):
+        expected = f"Commit {self.commit.id} on main"
+        self.assertEqual(str(self.commit), expected)
+
+    # ── Parent / Second Parent (SET_NULL) ─────────────────────────────
+
+    def test_parent_nullable(self):
+        self.assertIsNone(self.commit.parent)
+
+    def test_second_parent_nullable(self):
+        self.assertIsNone(self.commit.second_parent)
+
+    def test_parent_deletion_sets_null(self):
+        child = Commit.objects.create(
+            repository=self.repo, branch=self.branch,
+            message="Second commit", author=self.user,
+            parent=self.commit
+        )
+        self.commit.delete()
+        child.refresh_from_db()
+        self.assertIsNone(child.parent)
+
+    # ── Cascade ───────────────────────────────────────────────────────
+
+    def test_deleting_branch_cascades_commits(self):
+        commit_id = self.commit.id
+        self.branch.delete()
+        self.assertFalse(Commit.objects.filter(id=commit_id).exists())
+
+    def test_deleting_repo_cascades_commits(self):
+        commit_id = self.commit.id
+        self.repo.delete()
+        self.assertFalse(Commit.objects.filter(id=commit_id).exists())
+
+    def test_deleting_author_cascades_commits(self):
+        commit_id = self.commit.id
+        self.user.delete()
+        self.assertFalse(Commit.objects.filter(id=commit_id).exists())
+
+    # ── Ordering ──────────────────────────────────────────────────────
+
+    def test_commit_ordering_newest_first(self):
+        Commit.objects.create(
+            repository=self.repo, branch=self.branch,
+            message="Second", author=self.user
+        )
+        commits = Commit.objects.all()
+        self.assertEqual(commits[0].message, "Second")
+        self.assertEqual(commits[1].message, "Initial commit")

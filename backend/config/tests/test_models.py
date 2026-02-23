@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from repositories.models import Repository, RepositoryMember
 from issues.models import Issue, Label, IssueAssignee, IssueChoices
-from branches.models import Branches
+from branches.models import Branches, Commit
 from PullRequest.models import PullRequest, Review, PullRequestComment
 
 User = get_user_model()
@@ -347,15 +347,27 @@ class PullRequestModelTest(TestCase):
         self.assertEqual(self.pr.source_name, "feature")
         self.assertEqual(self.pr.target_name, "main")
 
-    def test_can_merge_open_pr(self):
-        """Test that an open PR with valid branches can be merged."""
-        self.assertTrue(self.pr.can_merge)
+    def test_is_mergeable_open_pr_without_approval(self):
+        """Test that an open PR without approvals is not mergeable."""
+        self.assertFalse(self.pr.is_mergeable)
 
-    def test_cannot_merge_closed_pr(self):
-        """Test that a closed PR cannot be merged."""
+    def test_is_mergeable_open_pr_with_approval(self):
+        """Test that an open PR with an approval is mergeable."""
+        reviewer = User.objects.create_user(
+            email="reviewer@example.com", password="pass123",
+            first_name="Reviewer", last_name="User",
+        )
+        Review.objects.create(
+            pr=self.pr, reviewer=reviewer,
+            status="APPROVED", comment="LGTM",
+        )
+        self.assertTrue(self.pr.is_mergeable)
+
+    def test_not_mergeable_closed_pr(self):
+        """Test that a closed PR is not mergeable."""
         self.pr.status = "CLOSED"
         self.pr.save()
-        self.assertFalse(self.pr.can_merge)
+        self.assertFalse(self.pr.is_mergeable)
 
 
 class ReviewModelTest(TestCase):
@@ -401,22 +413,8 @@ class ReviewModelTest(TestCase):
 
     def test_review_str(self):
         """Test the string representation of a review."""
-        expected = f"Review #{self.review.id} on PR #{self.pr.id} by reviewer@example.com"
+        expected = f"Review #{self.review.id} on PR #{self.pr.id}"
         self.assertEqual(str(self.review), expected)
-
-    def test_can_approve_different_user(self):
-        """Test that a reviewer who is not the author can approve (if not already approved)."""
-        new_review = Review(
-            pr=self.pr, reviewer=self.reviewer_user, status="COMMENTED",
-        )
-        self.assertTrue(new_review.can_approve)
-
-    def test_cannot_approve_own_pr(self):
-        """Test that the PR author cannot approve their own PR."""
-        author_review = Review(
-            pr=self.pr, reviewer=self.author, status="COMMENTED",
-        )
-        self.assertFalse(author_review.can_approve)
 
 
 class PullRequestCommentModelTest(TestCase):
@@ -457,7 +455,7 @@ class PullRequestCommentModelTest(TestCase):
 
     def test_comment_str(self):
         """Test the string representation of a PR comment."""
-        expected = f"Comment #{self.comment.id} on PR #{self.pr.id} by commenter@example.com"
+        expected = f"Comment #{self.comment.id} on PR #{self.pr.id}"
         self.assertEqual(str(self.comment), expected)
 
     def test_comment_reply(self):
@@ -468,3 +466,48 @@ class PullRequestCommentModelTest(TestCase):
         )
         self.assertEqual(reply.parent_comment, self.comment)
         self.assertIn(reply, self.comment.replies.all())
+
+
+class CommitModelTest(TestCase):
+    """Tests for the Commit model creation."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="commit@example.com", password="pass123",
+            first_name="Commit", last_name="User",
+        )
+        self.repo = Repository.objects.create(
+            name="Commit Repo", owner=self.user,
+            description="Repo for commit tests",
+        )
+        self.branch = Branches.objects.create(
+            name="main", repository=self.repo,
+            is_default=True, created_by=self.user,
+        )
+        self.commit = Commit.objects.create(
+            repository=self.repo, branch=self.branch,
+            message="Feature: Add commits", author=self.user,
+            snapshot={"version": 1}
+        )
+
+    def test_commit_creation(self):
+        """Test that a commit can be created."""
+        self.assertEqual(self.commit.message, "Feature: Add commits")
+        self.assertEqual(self.commit.author, self.user)
+        self.assertEqual(self.commit.branch, self.branch)
+        self.assertEqual(self.commit.snapshot["version"], 1)
+
+    def test_commit_str(self):
+        """Test the string representation of a commit."""
+        expected = f"Commit {self.commit.id} on main"
+        self.assertEqual(str(self.commit), expected)
+
+    def test_commit_relationships(self):
+        """Test parent/child relationships."""
+        child = Commit.objects.create(
+            repository=self.repo, branch=self.branch,
+            message="Fix: Bug in commits", author=self.user,
+            parent=self.commit
+        )
+        self.assertEqual(child.parent, self.commit)
+        self.assertIn(child, self.commit.children.all())

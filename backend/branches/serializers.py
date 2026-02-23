@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from .models import Branches
+from .models import Branches, Commit
 from repositories.models import Repository
 
 
@@ -39,3 +39,26 @@ class BranchesSerializer(serializers.ModelSerializer):
         validated_data['created_from'] = parent
         validated_data['repository'] = repository
         return Branches.objects.create(**validated_data)
+
+
+class CommitSerializer(serializers.ModelSerializer):
+    """Serializer for the Commit model."""
+
+    author_email = serializers.EmailField(source='author.email', read_only=True)
+
+    class Meta:
+        model = Commit
+        fields = [
+            'id',
+            'repository',
+            'branch',
+            'parent',
+            'second_parent',
+            'message',
+            'author',
+            'author_email',
+            'snapshot',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'author', 'repository', 'branch', 'created_at']
+
