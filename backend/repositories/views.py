@@ -26,7 +26,10 @@ class RepositoryViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return Repository.objects.filter(owner=self.request.user)
+        return Repository.objects.filter(
+            Q(owner=self.request.user) |
+            Q(repositoryMembers__developer=self.request.user)
+        ).distinct()
 
     
     @action(detail=True, methods=['get'], url_path="members")
@@ -140,8 +143,8 @@ class RepositoryDetailView(ModelViewSet):
 
         new_role = request.data.get("role")
         
-        if not IsMaintainer().has_object_permission(request, self, repository):
-            return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_403_FORBIDDEN)
+        if not IsRepositoryAdmin().has_object_permission(request, self, repository):
+            return Response({"message": "Only admins can change member roles"}, status=status.HTTP_403_FORBIDDEN)
         
         if member.role == REPO_ADMIN and new_role != REPO_ADMIN:
             is_valid, message = check_last_owner(repository, request.user, UPDATE_ROLE)
@@ -153,6 +156,14 @@ class RepositoryDetailView(ModelViewSet):
 
         serializer = UpdateMemberRoleSerializer(member)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path="my-role")
+    def my_role(self, request, slug=None):
+        repository = self.get_object()
+        member = RepositoryMember.objects.filter(repository=repository, developer=request.user).first()
+        if not member:
+            return Response({"role": None}, status=status.HTTP_200_OK)
+        return Response({"role": member.role}, status=status.HTTP_200_OK)
 
     
     

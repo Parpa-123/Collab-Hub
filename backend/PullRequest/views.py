@@ -131,6 +131,9 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Cannot reopen a merged pull request'}, status=status.HTTP_400_BAD_REQUEST)
             
         pr.status = 'OPEN'
+        pr.closed_at = None
+        if pr.target_branch and pr.target_branch.head_commit:
+            pr.base_commit = pr.target_branch.head_commit
         pr.save()
         return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
 
@@ -195,5 +198,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Response({'status': 'commented'}, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import ValidationError
         pull_request = PullRequest.objects.get(repo__slug=self.kwargs.get('slug'), pk=self.kwargs.get('pr_pk'))
-        serializer.save(reviewer=self.request.user, pr=pull_request)
+        reviewer = self.request.user
+
+        if pull_request.status != "OPEN":
+            raise ValidationError({"error": "Pull request must be open to review."})
+
+        if reviewer == pull_request.created_by:
+            raise ValidationError({"error": "You cannot review your own pull request."})
+
+        if not pull_request.repo.repositoryMembers.filter(developer=reviewer).exists():
+            raise ValidationError({"error": "You are not a member of this repository."})
+
+        if pull_request.source_branch_deleted or pull_request.target_branch_deleted:
+            raise ValidationError({"error": "Pull request must have both source and target branches."})
+
+        serializer.save(reviewer=reviewer, pr=pull_request)

@@ -12,4 +12,5 @@ urlpatterns = [
     path('<slug:slug>/add-member/', RepositoryDetailView.as_view({'post': 'add_member'}), name='repository-add-member'),
     path('<slug:slug>/remove-member/', RepositoryDetailView.as_view({'delete': 'remove_member'}), name='repository-remove-member'),
     path('<slug:slug>/members/<int:member_id>/role/', RepositoryDetailView.as_view({'patch': 'update_role'}), name='repository-update-role'),
+    path('<slug:slug>/my-role/', RepositoryDetailView.as_view({'get': 'my_role'}), name='repository-my-role'),
 ]

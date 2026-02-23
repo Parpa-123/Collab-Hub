@@ -8,11 +8,12 @@ import ProfileRepositories from "./ProfileRepositories"
 import connect from "../../axios/connect";
 import { useEffect } from "react";
 
-export interface RepoStruct{
-    name: string;
-    description : string;
-    visibility : string;
-    slug?: string;
+export interface RepoStruct {
+  name: string;
+  description: string;
+  visibility: string;
+  slug?: string;
+  my_role?: string | null;
 }
 
 const UserProfile = () => {
@@ -20,18 +21,18 @@ const UserProfile = () => {
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
-  const [repos,setRepos] = useState<RepoStruct[]>([]);
+  const [repos, setRepos] = useState<RepoStruct[]>([]);
 
   useEffect(() => {
     (async () => {
-        try {
-            const res = await connect.get('/repositories/');
-            setRepos(res.data);
-        } catch (error) {
-            console.error('Error fetching repositories:', error);
-        }
+      try {
+        const res = await connect.get('/repositories/');
+        setRepos(res.data);
+      } catch (error) {
+        console.error('Error fetching repositories:', error);
+      }
     })();
-}, []);
+  }, []);
 
   if (!login) return null
 
@@ -75,8 +76,8 @@ const UserProfile = () => {
 
           {/* Right column */}
           <div className="md:col-span-3">
-            {tab === "overview" && <ProfileDetails repos={repos.length}/>}
-            {tab === "repositories" && <ProfileRepositories repos={repos}/>}
+            {tab === "overview" && <ProfileDetails repos={repos.length} />}
+            {tab === "repositories" && <ProfileRepositories repos={repos} />}
           </div>
         </div>
 

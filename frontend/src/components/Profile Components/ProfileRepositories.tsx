@@ -1,5 +1,5 @@
-import { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import type { RepoStruct } from "./UserProfile";
 
 
@@ -61,16 +61,28 @@ const ProfileRepositories = ({ repos }: { repos: RepoStruct[] }) => {
                 {repos.map((repo) => (
                     <div key={repo.name} className="py-6 first:pt-0">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <Link to={`/${repo.slug}`} className="text-xl font-semibold text-blue-600 hover:underline">
                                     {repo.name}
                                 </Link>
                                 <span className={`px-2 py-0.5 text-xs border rounded-full font-medium ${repo.visibility === 'public'
-                                        ? 'border-green-500 text-green-700'
-                                        : 'border-yellow-500 text-yellow-700'
+                                    ? 'border-green-500 text-green-700'
+                                    : 'border-yellow-500 text-yellow-700'
                                     }`}>
                                     {repo.visibility.charAt(0).toUpperCase() + repo.visibility.slice(1)}
                                 </span>
+                                {repo.my_role && (
+                                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${repo.my_role === 'admin'
+                                        ? 'bg-purple-100 text-purple-700'
+                                        : repo.my_role === 'maintainer'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : repo.my_role === 'member'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                        {repo.my_role.charAt(0).toUpperCase() + repo.my_role.slice(1)}
+                                    </span>
+                                )}
                             </div>
                         </div>
                         {repo.description && (

@@ -19,9 +19,16 @@ class RepositoryCreateSerializer(serializers.ModelSerializer):
         return attrs
 
 class RepositoryListSerializer(serializers.ModelSerializer):
+    my_role = serializers.SerializerMethodField()
+
     class Meta:
         model = Repository
-        fields = ["name", "description", "visibility", "slug"]
+        fields = ["name", "description", "visibility", "slug", "my_role"]
+
+    def get_my_role(self, obj):
+        user = self.context["request"].user
+        member = RepositoryMember.objects.filter(repository=obj, developer=user).first()
+        return member.role if member else None
 
 class ViewRepositorySerializer(serializers.ModelSerializer):
     branches = serializers.SerializerMethodField()
@@ -76,6 +83,7 @@ class UserSearchSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "first_name", "last_name"]
 
 class RepositoryMemberSerializer(serializers.Serializer):
+    member_id = serializers.IntegerField(source='id')
     id = serializers.IntegerField(source='developer.id')
     email = serializers.EmailField(source='developer.email')
     first_name = serializers.CharField(source='developer.first_name')
