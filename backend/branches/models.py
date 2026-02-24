@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from common.models import CommonModel
+from django.contrib.contenttypes.fields import GenericRelation
 
 User = get_user_model()
 
@@ -65,6 +66,8 @@ class Commit(CommonModel):
         null=True,
         blank=True
     )
+
+    comments = GenericRelation("comments.Comment",related_name="comments")
 
     def __str__(self):
         return f"Commit {self.id} on {self.branch.name}"

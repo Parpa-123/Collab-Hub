@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from common.models import CommonModel
 from branches.models import Branches
 from repositories.models import Repository
+from django.contrib.contenttypes.fields import GenericRelation
 
 User = get_user_model()
 
@@ -76,6 +77,8 @@ class PullRequest(CommonModel):
 
     source_name = models.CharField(max_length=100, null=True, blank=True)
     target_name = models.CharField(max_length=100, null=True, blank=True)
+
+    comments = GenericRelation("comments.Comment",related_name="comments")
 
     @property
     def source_branch_deleted(self):
@@ -171,7 +174,7 @@ class Review(CommonModel):
         choices=REVIEW_STATUS
     )
 
-    comment = models.TextField(blank=True, null=True)
+    comments = GenericRelation("comments.Comment",related_name="comments")
 
     def __str__(self):
         return f"Review #{self.id} on PR #{self.pr.id}"

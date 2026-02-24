@@ -37,6 +37,7 @@ REPO_ROLE_PERMISSIONS = {
         COMMENT,
         CREATE_BRANCH,
         DELETE_BRANCH,
+        PROTECT_BRANCH,
         UPDATE_ROLE,
     },
     REPO_MEMBER:{

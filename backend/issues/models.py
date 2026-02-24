@@ -2,6 +2,7 @@ from django.db import models
 from common.models import CommonModel
 from repositories.models import Repository
 from accounts.models import CustomUser
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class IssueChoices(models.TextChoices):
@@ -29,6 +30,8 @@ class Issue(CommonModel):
     assignees = models.ManyToManyField(CustomUser, related_name="issues", through="IssueAssignee")
     parent = models.ForeignKey("self", on_delete=models.CASCADE, related_name="children", null=True, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
+
+    comments = GenericRelation("comments.Comment",related_name="comments")
     
     def __str__(self):
         return self.title

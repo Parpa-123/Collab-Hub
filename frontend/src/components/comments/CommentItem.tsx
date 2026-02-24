@@ -1,0 +1,299 @@
+import { useState, useContext } from "react";
+import {
+    MessageSquare,
+    Pencil,
+    Trash2,
+    Check,
+    X,
+    Loader2,
+} from "lucide-react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import connect from "../../axios/connect";
+import { userContext } from "../../Context/userContext";
+import ReplyForm from "./ReplyForm";
+
+dayjs.extend(relativeTime);
+
+export interface CommentAuthor {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+}
+
+export interface CommentData {
+    id: number;
+    content_type: number;
+    object_id: number;
+    author: CommentAuthor;
+    content: string;
+    parent: number | null;
+    replies: CommentData[];
+    created_at: string;
+    updated_at: string;
+}
+
+interface CommentItemProps {
+    comment: CommentData;
+    slug: string;
+    model: string;
+    objectId: number;
+    myRole: string | null;
+    onRefresh: () => void;
+    depth?: number;
+}
+
+const roleBadge: Record<string, { label: string; cls: string }> = {
+    admin: {
+        label: "Owner",
+        cls: "bg-purple-100 text-purple-700 border-purple-200",
+    },
+    maintainer: {
+        label: "Maintainer",
+        cls: "bg-blue-100 text-blue-700 border-blue-200",
+    },
+    member: {
+        label: "Member",
+        cls: "bg-gray-100 text-gray-600 border-gray-200",
+    },
+    viewer: {
+        label: "Viewer",
+        cls: "bg-gray-50 text-gray-500 border-gray-200",
+    },
+};
+
+function authorName(author: CommentAuthor): string {
+    if (author.first_name || author.last_name)
+        return `${author.first_name ?? ""} ${author.last_name ?? ""}`.trim();
+    return author.email;
+}
+
+function authorInitial(author: CommentAuthor): string {
+    return (author.first_name?.[0] ?? author.email?.[0] ?? "?").toUpperCase();
+}
+
+const CommentItem = ({
+    comment,
+    slug,
+    model,
+    objectId,
+    myRole,
+    onRefresh,
+    depth = 0,
+}: CommentItemProps) => {
+    const { login } = useContext(userContext);
+    const isAuthor = login?.pk === comment.author.id;
+    const canDelete =
+        isAuthor || myRole === "admin" || myRole === "maintainer";
+
+    const [replying, setReplying] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [editContent, setEditContent] = useState(comment.content);
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
+
+    const handleEdit = async () => {
+        if (!editContent.trim()) return;
+        setSaving(true);
+        try {
+            await connect.patch(`/repositories/${slug}/comments/${comment.id}/`, {
+                content: editContent.trim(),
+            });
+            setEditing(false);
+            onRefresh();
+        } catch {
+            /* keep form open */
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            await connect.delete(`/repositories/${slug}/comments/${comment.id}/`);
+            onRefresh();
+        } catch {
+            /* silent */
+        } finally {
+            setDeleting(false);
+            setConfirmDelete(false);
+        }
+    };
+
+    const avatarBg = depth % 2 === 0 ? "bg-blue-100 text-blue-600" : "bg-teal-100 text-teal-600";
+
+    return (
+        <div className={depth > 0 ? "ml-6 mt-3 pl-4 border-l-2 border-[#d8dee4]" : "mt-4"}>
+            {/* Comment card */}
+            <div className="border border-[#d0d7de] rounded-lg bg-white overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f6f8fa] border-b border-[#d0d7de]">
+                    <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${avatarBg}`}
+                    >
+                        {authorInitial(comment.author)}
+                    </div>
+                    <span className="text-sm font-semibold text-[#1f2328]">
+                        {authorName(comment.author)}
+                    </span>
+
+                    {/* Role badge — only if we know the role and the user is the current author */}
+                    {myRole && isAuthor && roleBadge[myRole] && (
+                        <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${roleBadge[myRole].cls}`}
+                        >
+                            {roleBadge[myRole].label}
+                        </span>
+                    )}
+
+                    <span className="text-xs text-gray-400 ml-auto">
+                        {dayjs(comment.created_at).fromNow()}
+                        {comment.updated_at !== comment.created_at && (
+                            <span className="ml-1 italic">(edited)</span>
+                        )}
+                    </span>
+                </div>
+
+                {/* Body */}
+                <div className="px-4 py-3">
+                    {editing ? (
+                        <div>
+                            <textarea
+                                rows={3}
+                                className="w-full border border-[#d0d7de] rounded-md px-3 py-2 text-sm outline-none focus:border-[#0969da] focus:ring-1 focus:ring-[#0969da] resize-none transition-all"
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                disabled={saving}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleEdit();
+                                    if (e.key === "Escape") {
+                                        setEditing(false);
+                                        setEditContent(comment.content);
+                                    }
+                                }}
+                            />
+                            <div className="flex items-center gap-2 mt-2 justify-end">
+                                <button
+                                    onClick={() => {
+                                        setEditing(false);
+                                        setEditContent(comment.content);
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    <X className="w-3 h-3" /> Cancel
+                                </button>
+                                <button
+                                    onClick={handleEdit}
+                                    disabled={saving || !editContent.trim()}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1f883d] text-white hover:bg-[#1a7f37] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {saving ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                        <Check className="w-3 h-3" />
+                                    )}
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-[#1f2328] whitespace-pre-wrap leading-relaxed">
+                            {comment.content}
+                        </p>
+                    )}
+                </div>
+
+                {/* Action bar */}
+                {!editing && (
+                    <div className="flex items-center gap-3 px-4 py-2 border-t border-[#eaeef2]">
+                        <button
+                            onClick={() => setReplying(!replying)}
+                            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#0969da] transition-colors"
+                        >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Reply
+                        </button>
+
+                        {isAuthor && (
+                            <button
+                                onClick={() => {
+                                    setEditContent(comment.content);
+                                    setEditing(true);
+                                }}
+                                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#0969da] transition-colors"
+                            >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                            </button>
+                        )}
+
+                        {canDelete && (
+                            <>
+                                {confirmDelete ? (
+                                    <span className="inline-flex items-center gap-1.5 text-xs">
+                                        <span className="text-red-600 font-medium">Delete?</span>
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={deleting}
+                                            className="text-red-600 hover:text-red-800 font-medium transition-colors"
+                                        >
+                                            {deleting ? "…" : "Yes"}
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmDelete(false)}
+                                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                                        >
+                                            No
+                                        </button>
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => setConfirmDelete(true)}
+                                        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Delete
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Reply form */}
+            {replying && (
+                <ReplyForm
+                    slug={slug}
+                    model={model}
+                    objectId={objectId}
+                    parentId={comment.id}
+                    onSuccess={() => {
+                        setReplying(false);
+                        onRefresh();
+                    }}
+                    onCancel={() => setReplying(false)}
+                />
+            )}
+
+            {/* Nested replies */}
+            {comment.replies?.map((reply) => (
+                <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    slug={slug}
+                    model={model}
+                    objectId={objectId}
+                    myRole={myRole}
+                    onRefresh={onRefresh}
+                    depth={depth + 1}
+                />
+            ))}
+        </div>
+    );
+};
+
+export default CommentItem;
