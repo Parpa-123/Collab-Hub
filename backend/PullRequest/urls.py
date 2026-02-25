@@ -9,6 +9,7 @@ urlpatterns = [
     path('<int:pk>/reopen/', PullRequestViewSet.as_view({'post': 'reopen'})),
 
     # Review routes (nested under a specific PR)
+    path('<int:pk>/diff/', PullRequestViewSet.as_view({'get': 'diff'})),
     path('<int:pr_pk>/reviews/', ReviewViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('<int:pr_pk>/reviews/<int:pk>/', ReviewViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'})),
     path('<int:pr_pk>/reviews/<int:pk>/approve/', ReviewViewSet.as_view({'post': 'approve'})),

@@ -8,8 +8,7 @@ from branches.models import Branches, Commit
 from .models import PullRequest, Review
 from .serializers import PullRequestSerializer, ReviewSerializer
 from django.db import transaction
-
-
+from .services.diff_service import generate_diff
 from config.access.services import get_repo_membership, get_repo_role
 from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
 
@@ -136,6 +135,16 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             pr.base_commit = pr.target_branch.head_commit
         pr.save()
         return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
+
+        @action(detail=True, methods=['get'])
+        def diff(self, request, pk=None):
+
+            pr = self.get_object()
+            if not pr.base_commit or not pr.source_branch.head_commit:
+                return Response({'error': 'Cannot generate diff for pull request without base and source commits'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            diff = generate_diff(pr.base_commit, pr.source_branch.head_commit)
+            return Response(diff, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
