@@ -3,6 +3,7 @@ import { NavLink, Outlet, useParams } from "react-router-dom";
 import connect from "../../axios/connect";
 import type { RepoStruct } from "../Profile Components/UserProfile";
 import type { User } from "../../Context/userContext";
+import NotFound from "../../404 section/404";
 
 export interface SearchUser extends User {
   id: number;
@@ -55,6 +56,7 @@ const MainLayout = () => {
   const { slug } = useParams();
 
   const [repo, setRepo] = useState<RepoStruct | null>(null);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [modal, showModal] = useState(false);
   const [membersModal, showMembersModal] = useState(false);
 
@@ -72,15 +74,18 @@ const MainLayout = () => {
     try {
       const res = await connect.get(`/repositories/${slug}/`);
       setRepo(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching repository:", err);
+      if (err.response?.status === 404) {
+        setIsNotFound(true);
+      }
     }
   };
 
   const fetchMembers = async () => {
     try {
       const res = await connect.get(`/repositories/${slug}/members/`);
-      setMembers(res.data);
+      setMembers(res.data.results ?? res.data);
     } catch (err) {
       console.error("Error fetching members:", err);
     }
@@ -106,7 +111,7 @@ const MainLayout = () => {
     try {
       setLoading(true);
       const res = await connect.get(`/repositories/${slug}/search-users/?search=${searchQuery}`);
-      setSearchResult(res.data);
+      setSearchResult(res.data.results ?? res.data);
     } catch (err) {
       console.error("Error searching users:", err);
     } finally {
@@ -146,6 +151,10 @@ const MainLayout = () => {
   };
 
   const isAdmin = myRole === "admin";
+
+  if (isNotFound) {
+    return <NotFound />;
+  }
 
   return (
     <div className="bg-white min-h-screen">

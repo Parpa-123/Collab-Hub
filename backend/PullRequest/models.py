@@ -147,7 +147,13 @@ class PullRequest(CommonModel):
         return f"PR #{self.id}: {self.title}"
 
     class Meta:
-        unique_together = ("repo", "source_branch", "target_branch")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["repo", "source_branch", "target_branch"],
+                condition=models.Q(status="OPEN"),
+                name="unique_open_pr_per_branch_pair"
+            )
+        ]
 
 class Review(CommonModel):
 

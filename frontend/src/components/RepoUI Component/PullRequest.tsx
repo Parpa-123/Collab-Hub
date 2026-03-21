@@ -72,7 +72,7 @@ const PullRequests = () => {
   const fetchPRs = async () => {
     try {
       const res = await connect.get(`/repositories/${slug}/pull-requests/`);
-      setPrs(res.data);
+      setPrs(res.data.results ?? res.data);
     } catch (err) {
       console.error("Failed to fetch pull requests", err);
     }
@@ -81,7 +81,7 @@ const PullRequests = () => {
   const fetchBranches = async () => {
     try {
       const res = await connect.get(`/repositories/${slug}/branches/`);
-      setBranches(res.data);
+      setBranches(res.data.results ?? res.data);
     } catch (err) {
       console.error("Failed to fetch branches", err);
     }
@@ -99,7 +99,7 @@ const PullRequests = () => {
   const fetchReviews = async (prId: number) => {
     try {
       const res = await connect.get(`/repositories/${slug}/pull-requests/${prId}/reviews/`);
-      setReviewsMap((prev) => ({ ...prev, [prId]: res.data }));
+      setReviewsMap((prev) => ({ ...prev, [prId]: res.data.results ?? res.data }));
     } catch (err) {
       console.error(`Failed to fetch reviews for PR ${prId}`, err);
     }
@@ -119,7 +119,8 @@ const PullRequests = () => {
   const canApprove = myRole === "admin" || myRole === "maintainer";
 
   const getApprovalStatus = (prId: number) => {
-    const reviews = reviewsMap[prId] || [];
+    const raw = reviewsMap[prId];
+    const reviews = Array.isArray(raw) ? raw : [];
     const approved = reviews.filter((r) => r.status === "APPROVED").length;
     return { reviews, approved };
   };

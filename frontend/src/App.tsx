@@ -10,6 +10,7 @@ import Branches from "./components/RepoUI Component/Branches";
 import PullRequest from "./components/RepoUI Component/PullRequest";
 import Issues from "./components/RepoUI Component/Issues";
 import IssueDetail from "./components/RepoUI Component/IssueDetail";
+import NotFound from "./404 section/404";
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
               <Route path="issues" element={<ProtectedRouting><Issues /></ProtectedRouting>} />
               <Route path="issues/:id" element={<ProtectedRouting><IssueDetail /></ProtectedRouting>} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </UserContextProvider>

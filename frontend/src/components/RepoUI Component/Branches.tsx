@@ -23,7 +23,7 @@ const Branches = () => {
   const fetchBranches = async () => {
     try {
       const res = await connect.get(`/repositories/${slug}/branches`);
-      setBranches(res.data);
+      setBranches(res.data.results ?? res.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
     }

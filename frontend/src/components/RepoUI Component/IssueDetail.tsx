@@ -93,7 +93,7 @@ const IssueDetail = () => {
                     connect.get(`/repositories/${slug}/labels/`),
                 ]);
                 setIssue(issueRes.data);
-                setLabels(labelsRes.data);
+                setLabels(labelsRes.data.results ?? labelsRes.data);
             } catch (err: any) {
                 console.error("Failed to load issue:", err);
                 setError(err.response?.data?.detail || "Issue not found.");

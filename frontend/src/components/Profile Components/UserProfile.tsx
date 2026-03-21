@@ -27,7 +27,7 @@ const UserProfile = () => {
     (async () => {
       try {
         const res = await connect.get('/repositories/');
-        setRepos(res.data);
+        setRepos(res.data.results ?? res.data);
       } catch (error) {
         console.error('Error fetching repositories:', error);
       }

@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom"
 import { userContext } from "../Context/userContext"
 import connect from "../axios/connect"
 import AuthDialog from "../components/Header Components/AuthHeader"
+import NotificationPanel from "../components/Header Components/NotificationPanel"
 import axios from "axios"
 
 import logo from "../assets/svg-ai-collabhub-2026-01-23.svg"
@@ -92,9 +93,12 @@ const Header = () => {
                 loginWithMicrosoft={loginWithMicrosoft}
               />
             ) : (
-              <button className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                {login.first_name} {login.last_name}
-              </button>
+              <>
+                <NotificationPanel isLoggedIn={!!login} />
+                <button className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                  {login.first_name} {login.last_name}
+                </button>
+              </>
             )}
           </div>
         </div>

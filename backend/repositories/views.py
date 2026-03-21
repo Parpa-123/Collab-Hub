@@ -14,6 +14,8 @@ from django.db.models import Q
 from config.access.edge_cases import check_last_owner
 from config.access.constants import LEAVE_REPO, REPO_ADMIN, REPO_MAINTAINER, REPO_VIEWER, REMOVE_USER, UPDATE_ROLE
 from django.shortcuts import get_object_or_404
+from .tree_construct import build_structured_tree
+from config.access.services import get_repo_membership
 
 
 class RepositoryViewSet(ModelViewSet):
@@ -26,9 +28,11 @@ class RepositoryViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
+        user = self.request.user
         return Repository.objects.filter(
-            Q(owner=self.request.user) |
-            Q(repositoryMembers__developer=self.request.user)
+            Q(owner=user) |
+            Q(repositoryMembers__developer=user) |
+            Q(visibility=Repository.Visibility.PUBLIC)
         ).distinct()
 
     
@@ -61,10 +65,19 @@ class RepositoryViewSet(ModelViewSet):
         return super().get_serializer_class()
 
 class RepositoryDetailView(ModelViewSet):
-    queryset = Repository.objects.all()
+    
     permission_classes = [IsAuthenticated]
     serializer_class = ViewRepositorySerializer
-    lookup_field = "slug"
+    lookup_field = 'slug'
+    
+
+    def get_queryset(self):
+        user = self.request.user
+        return Repository.objects.filter(
+            Q(owner=user) |
+            Q(repositoryMembers__developer=user) |
+            Q(visibility=Repository.Visibility.PUBLIC)
+        ).distinct()
 
     @action(detail=True, methods=['get'], url_path="members")
     def list_members(self, request, slug=None):
@@ -112,6 +125,60 @@ class RepositoryDetailView(ModelViewSet):
             
         )
         return Response({"message": "Member added successfully", "role": member.role}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def readme(self,request,slug=None):
+        repo = self.get_object()
+        branch = repo.default_branch
+        latest_commit = Branches.objects.filter(repository=repo, name=branch).first()
+
+        if not latest_commit or latest_commit.snapshot is None:
+            return Response({"message": "No readme found"}, status=status.HTTP_404_NOT_FOUND)
+
+        readme_content = latest_commit.snapshot.get("README.md", None)
+        
+        if not readme_content:
+            return Response({"message": "No readme found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"readme": readme_content}, status=status.HTTP_200_OK)
+        
+    @action(detail=True, methods=['post'])
+    def tree(self,request,slug=None):
+        repo = self.get_object()
+        branch = repo.default_branch
+        latest_commit = Branches.objects.filter(repository=repo, name=branch).first()
+
+        if not latest_commit or latest_commit.snapshot is None:
+            return Response({"files": []}, status=status.HTTP_404_NOT_FOUND)
+
+        snapshot = latest_commit.snapshot
+        
+        if not snapshot:
+            return Response({"files": []}, status=status.HTTP_404_NOT_FOUND)
+
+        paths = build_structured_tree(snapshot)
+        
+        return Response({"tree": paths}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def code_review(self, request, slug=None):
+        repo = self.get_object()
+        file_path = request.query_params.get("path", None)
+        branch = repo.default_branch
+        latest_commit = Branches.objects.filter(repository=repo, name=branch).first()
+
+        if not latest_commit or latest_commit.snapshot is None:
+            return Response({"message": "No code review found"}, status=status.HTTP_404_NOT_FOUND)
+
+        code_review = latest_commit.snapshot.get(file_path, None)
+        
+        if not code_review:
+            return Response({"message": "No code review found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"code_review": code_review}, status=status.HTTP_200_OK)
+
+
+    
 
     @action(detail=True, methods=['delete'], url_path="remove-member")
     def remove_member(self, request, slug=None):

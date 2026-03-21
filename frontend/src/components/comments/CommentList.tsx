@@ -23,7 +23,7 @@ const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
             const res = await connect.get(
                 `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}`
             );
-            setComments(res.data);
+            setComments(res.data.results ?? res.data);
         } catch (err: any) {
             setError(
                 err.response?.data?.detail || "Failed to load comments."

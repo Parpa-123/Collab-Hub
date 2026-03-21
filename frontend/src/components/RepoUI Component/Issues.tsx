@@ -94,8 +94,8 @@ const Issues = () => {
           connect.get(`/repositories/${slug}/labels/`),
         ]);
 
-        setIssues(issuesRes.data);
-        setLabels(labelsRes.data);
+        setIssues(issuesRes.data.results ?? issuesRes.data);
+        setLabels(labelsRes.data.results ?? labelsRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {

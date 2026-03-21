@@ -8,6 +8,10 @@ from config.access.constants import CREATE_ISSUE, UPDATE_ISSUE, CLOSE_ISSUE
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import IssueFilter
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from config.events.dispatcher import dispatch_event
+from config.events.event_types import ISSUE_CREATED, ISSUE_ASSIGNED
 
 class IssueManagePermission(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -86,6 +90,39 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
     def perform_create(self, serializer):
         repo = get_object_or_404(Repository, slug=self.kwargs.get('slug'))
         serializer.save(creator=self.request.user, repo=repo)
+        
+        dispatch_event(
+            ISSUE_CREATED,
+            {
+                "actor": self.request.user,
+                "issue": serializer.instance
+            }
+        )
+    
+    @action(detail=True, methods=['post'])
+    def assign(self, request, pk=None, slug=None):
+        issue = self.get_object()
+        assignee_id = request.data.get('assignee_id')
+        if not assignee_id:
+            return Response({"error": "assignee_id is required"}, status=400)
+            
+        from django.contrib.auth import get_user_model
+        user = get_object_or_404(get_user_model(), id=assignee_id)
+        
+        if IssueAssignee.objects.filter(issue=issue, assignee=user).exists():
+            return Response({"error": "User is already assigned to this issue"}, status=400)
+            
+        IssueAssignee.objects.create(issue=issue, assignee=user)
+        
+        dispatch_event(
+            ISSUE_ASSIGNED,
+            {
+                "actor": request.user,
+                "issue": issue,
+                "assignee": user
+            }
+        )
+        return Response({"status": "assigned"}, status=200)
     
     
 

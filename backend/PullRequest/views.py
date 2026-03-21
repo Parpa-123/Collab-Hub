@@ -11,6 +11,8 @@ from django.db import transaction
 from .services.diff_service import generate_diff
 from config.access.services import get_repo_membership, get_repo_role
 from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
+from config.events.dispatcher import dispatch_event
+from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED
 
 
 class PullRequestHardenedPermission(permissions.BasePermission):
@@ -63,10 +65,23 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         return obj
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import ValidationError
         repo = Repository.objects.get(slug=self.kwargs.get('slug'))
         target_branch = serializer.validated_data.get('target_branch')
+        source_branch = serializer.validated_data.get('source_branch')
+        
+        if PullRequest.objects.filter(repo=repo, source_branch=source_branch, target_branch=target_branch, status="OPEN").exists():
+            raise ValidationError({"error": ["An open pull request already exists for these branches."]})
+
         base_commit = target_branch.head_commit if target_branch else None
         serializer.save(created_by=self.request.user, repo=repo, base_commit=base_commit)
+        dispatch_event(
+            PR_CREATED,
+            {
+                "actor": self.request.user,
+                "pr": serializer.instance
+            }
+        )
 
     @action(detail=True, methods=['post'])
     def merge(self, request, **kwargs):
@@ -136,15 +151,15 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         pr.save()
         return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
 
-        @action(detail=True, methods=['get'])
-        def diff(self, request, pk=None):
+    @action(detail=True, methods=['get'])
+    def diff(self, request, pk=None):
 
-            pr = self.get_object()
-            if not pr.base_commit or not pr.source_branch.head_commit:
-                return Response({'error': 'Cannot generate diff for pull request without base and source commits'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            diff = generate_diff(pr.base_commit, pr.source_branch.head_commit)
-            return Response(diff, status=status.HTTP_200_OK)
+        pr = self.get_object()
+        if not pr.base_commit or not pr.source_branch.head_commit:
+            return Response({'error': 'Cannot generate diff for pull request without base and source commits'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        diff = generate_diff(pr.base_commit, pr.source_branch.head_commit)
+        return Response(diff, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -179,6 +194,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         review.status = 'APPROVED'
         review.save()
+        dispatch_event(PR_REVIEWED, {
+            "actor": request.user,
+            "review": review
+        })
         return Response({'status': 'approved'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -194,6 +213,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         review.status = 'CHANGES_REQUESTED'
         review.save()
+        dispatch_event(PR_REVIEWED, {
+            "actor": request.user,
+            "review": review
+        })
         return Response({'status': 'changes requested'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -204,6 +227,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         review.status = 'COMMENTED'
         review.save()
+        dispatch_event(PR_COMMENTED, {
+            "actor": request.user,
+            "review": review
+        })
         return Response({'status': 'commented'}, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):

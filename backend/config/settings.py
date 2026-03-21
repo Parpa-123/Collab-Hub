@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "drf_spectacular",
-
+    'django_celery_results',
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     "dj_rest_auth.registration",
     'rest_framework_simplejwt.token_blacklist',
+    'activity',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -141,7 +143,8 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
     "EXCEPTION_HANDLER": "accounts.exceptions.custom_exception_handler",
-
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 SITE_ID = 2  # localhost:8000 for development
 CORS_ALLOW_CREDENTIALS = True
@@ -200,6 +203,8 @@ USE_I18N = True
 USE_TZ = True
 
 
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -251,3 +256,13 @@ REST_AUTH = {
 
 
 # X_FRAME_OPTIONS = 'DENY'
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+
+CELERY_TIMEZONE = "UTC"
