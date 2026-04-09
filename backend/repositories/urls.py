@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RepositoryViewSet, RepositoryDetailView, OptionAPIView
+from .views import RepositoryViewSet, RepositoryDetailView, OptionAPIView, RepositoryTree, FileContent, CommitDiffView
 
 app_name = 'repositories'
 
@@ -14,6 +14,9 @@ urlpatterns = [
     path('<slug:slug>/members/<int:member_id>/role/', RepositoryDetailView.as_view({'patch': 'update_role'}), name='repository-update-role'),
     path('<slug:slug>/my-role/', RepositoryDetailView.as_view({'get': 'my_role'}), name='repository-my-role'),
     path('<slug:slug>/readme/', RepositoryDetailView.as_view({'get': 'readme'}), name='repository-readme'),
-    path('<slug:slug>/tree/', RepositoryDetailView.as_view({'get': 'tree'}), name='repository-tree'),
+    path('<slug:slug>/tree/', RepositoryTree.as_view(), name='repository-tree'),
     path('<slug:slug>/code-review/', RepositoryDetailView.as_view({'get': 'code_review'}), name='repository-code-review'),
+    path('<slug:slug>/file-upload/', RepositoryDetailView.as_view({'post': 'file_upload'}), name='repository-file-upload'),
+    path('<slug:slug>/file-content/', FileContent.as_view(), name='repository-file-content'),
+    path('<slug:slug>/commit-diff/', CommitDiffView.as_view(), name='repository-commit-diff'),
 ]

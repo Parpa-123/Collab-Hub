@@ -41,3 +41,13 @@ def handle_issue_assigned(payload):
         )
     except Exception as e:
         print(f"Error handling issue assigned event: {e}")
+
+from config.events.event_types import COMMENT_CREATED
+from .tasks import notify_generic_comment
+
+@event_handler(COMMENT_CREATED)
+def handle_comment_created(payload):
+    try:
+        notify_generic_comment.delay(payload['comment'].id)
+    except Exception as e:
+        print(f"Error handling comment created event: {e}")

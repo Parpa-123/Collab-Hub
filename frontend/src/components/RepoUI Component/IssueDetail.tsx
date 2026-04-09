@@ -138,6 +138,38 @@ const IssueDetail = () => {
         }
     };
 
+    const handleCloseIssue = async () => {
+        if (!issue) return;
+        try {
+            setSaving(true);
+            const res = await connect.patch(
+                `/repositories/${slug}/issues/${issue.id}/`,
+                { status: "closed" }
+            );
+            setIssue(res.data);
+        } catch (err: any) {
+            console.error("Failed to close issue:", err.response?.data || err);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReopenIssue = async () => {
+        if (!issue) return;
+        try {
+            setSaving(true);
+            const res = await connect.patch(
+                `/repositories/${slug}/issues/${issue.id}/`,
+                { status: "open" }
+            );
+            setIssue(res.data);
+        } catch (err: any) {
+            console.error("Failed to reopen issue:", err.response?.data || err);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20 text-gray-400">
@@ -180,15 +212,42 @@ const IssueDetail = () => {
                         {issue.title}
                         <span className="ml-2 text-gray-400 font-normal">#{issue.id}</span>
                     </h1>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={openEditDialog}
-                        className="flex items-center gap-1.5 shrink-0"
-                    >
-                        <Pencil size={14} />
-                        Edit
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openEditDialog}
+                            className="flex items-center gap-1.5 shrink-0"
+                            disabled={saving}
+                        >
+                            <Pencil size={14} />
+                            Edit
+                        </Button>
+                        {issue.status !== "closed" && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCloseIssue}
+                                disabled={saving}
+                                className="flex items-center gap-1.5 shrink-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                            >
+                                <CircleCheck size={14} />
+                                Close issue
+                            </Button>
+                        )}
+                        {issue.status === "closed" && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleReopenIssue}
+                                disabled={saving}
+                                className="flex items-center gap-1.5 shrink-0 hover:bg-green-50 hover:text-green-600 hover:border-green-200"
+                            >
+                                <CircleDot size={14} />
+                                Reopen
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 mt-3">

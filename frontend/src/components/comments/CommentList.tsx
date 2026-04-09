@@ -8,10 +8,11 @@ interface CommentListProps {
     slug: string;
     model: string;
     objectId: number;
+    path?: string;
     myRole: string | null;
 }
 
-const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
+const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) => {
     const [comments, setComments] = useState<CommentData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -20,10 +21,12 @@ const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
         try {
             setLoading(true);
             setError(null);
-            const res = await connect.get(
-                `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}`
-            );
-            setComments(res.data.results ?? res.data);
+            const url = path
+                ? `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}&path=${encodeURIComponent(path)}`
+                : `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}`;
+            const res = await connect.get(url);
+            const data = res.data.results ?? res.data;
+            setComments(Array.isArray(data) ? data : []);
         } catch (err: any) {
             setError(
                 err.response?.data?.detail || "Failed to load comments."
@@ -31,7 +34,7 @@ const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
         } finally {
             setLoading(false);
         }
-    }, [slug, model, objectId]);
+    }, [slug, model, objectId, path]);
 
     useEffect(() => {
         fetchComments();
@@ -43,7 +46,7 @@ const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
             <div className="flex items-center gap-2 mb-1">
                 <MessageCircle className="w-4 h-4 text-[#636c76]" />
                 <h3 className="text-sm font-semibold text-[#1f2328]">
-                    Discussion
+                    {path ? `File discussion` : "Discussion"}
                     {!loading && (
                         <span className="ml-1.5 text-xs font-normal text-gray-400">
                             ({comments.length})
@@ -98,6 +101,7 @@ const CommentList = ({ slug, model, objectId, myRole }: CommentListProps) => {
                 slug={slug}
                 model={model}
                 objectId={objectId}
+                path={path}
                 onSuccess={fetchComments}
             />
         </div>

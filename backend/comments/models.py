@@ -15,6 +15,14 @@ class Comment(CommonModel):
     content = models.TextField()
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
 
+    SIDE_CHOICES = (
+        ("old", "Old"),
+        ("new", "New"),
+    )
+    path = models.TextField(null=True, blank=True)
+    line_number = models.IntegerField(null=True, blank=True)
+    side = models.CharField(max_length=10, choices=SIDE_CHOICES, null=True, blank=True)
+
     def __str__(self):
         return f'Comment by {self.author} on {self.content_object}'
 

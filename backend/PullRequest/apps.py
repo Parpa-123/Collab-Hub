@@ -7,3 +7,4 @@ class PullrequestConfig(AppConfig):
 
     def ready(self):
         import PullRequest.signals
+        import PullRequest.handlers

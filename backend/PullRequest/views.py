@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -8,11 +9,13 @@ from branches.models import Branches, Commit
 from .models import PullRequest, Review
 from .serializers import PullRequestSerializer, ReviewSerializer
 from django.db import transaction
-from .services.diff_service import generate_diff
+from storage.services.diff_services import generate_diff
 from config.access.services import get_repo_membership, get_repo_role
 from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
 from config.events.dispatcher import dispatch_event
 from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED
+from storage.models import TreeNode
+from rest_framework.permissions import IsAuthenticated
 
 
 class PullRequestHardenedPermission(permissions.BasePermission):
@@ -75,6 +78,10 @@ class PullRequestViewSet(viewsets.ModelViewSet):
 
         base_commit = target_branch.head_commit if target_branch else None
         serializer.save(created_by=self.request.user, repo=repo, base_commit=base_commit)
+
+        from .tasks import trigger_diff_generation
+        trigger_diff_generation(serializer.instance.id)
+
         dispatch_event(
             PR_CREATED,
             {
@@ -85,35 +92,55 @@ class PullRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def merge(self, request, **kwargs):
-        pr = self.get_object()
-        
-        if pr.status != "OPEN":
-            return Response({'error': f'Cannot merge a {pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if pr.source_branch_deleted or pr.target_branch_deleted:
-            return Response({'error': 'Source or target branch has been deleted'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if pr.has_conflicts:
-            return Response({'error': 'Conflicts detected: Target branch has moved since PR creation'}, status=status.HTTP_400_BAD_REQUEST)
-
-        approvals = pr.reviews.filter(status="APPROVED").count()
-        has_changes_requested = pr.reviews.filter(status="CHANGES_REQUESTED").exists()
-        
-        if has_changes_requested:
-            return Response({'error': 'Cannot merge: There are active changes requested'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if approvals < 1:
-            return Response({'error': 'Cannot merge: At least one approval is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            pr = self.get_object()
+        
+            if pr.status != "OPEN":
+                return Response({'error': f'Cannot merge a {pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if pr.source_branch_deleted or pr.target_branch_deleted:
+                return Response({'error': 'Source or target branch has been deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if pr.base_commit != pr.target_branch.head_commit:
+                return Response({'error': 'Target branch has changed. Please rebase.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if pr.has_conflicts:
+                return Response({'error': 'Conflicts detected: Target branch has moved since PR creation'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not pr.source_branch.head_commit:
+                return Response({'error': 'Source branch has no commits'}, status=400)
+
+            latest_commit_id = pr.source_branch.head_commit.id
+
+            reviews = pr.reviews.filter(commit=latest_commit_id)
+
+            approvals = reviews.filter(status="APPROVED").count()
+            has_changes_requested = reviews.filter(status="CHANGES_REQUESTED").exists()
+        
+            if has_changes_requested:
+                return Response({'error': 'Cannot merge: There are active changes requested'}, status=status.HTTP_400_BAD_REQUEST)
+        
+            if pr.target_branch.is_protected and approvals < 1:
+                return Response({'error': 'Cannot merge: At least one approval is required for protected branches'}, status=status.HTTP_400_BAD_REQUEST)
+
+            merged_snapshot = {
+                **pr.base_commit.snapshot,
+                **pr.source_branch.head_commit.snapshot
+            }
             merge_commit = Commit.objects.create(
                 repository=pr.repo,
                 branch=pr.target_branch,
                 parent=pr.target_branch.head_commit,
                 second_parent=pr.source_branch.head_commit,
                 message=f"Merge pull request #{pr.id} from {pr.source_name}",
-                author=request.user
+                author=request.user,
+                snapshot=merged_snapshot
             )
+            
+            from storage.services.tree_services import build_tree_from_snapshots
+            build_tree_from_snapshots(merge_commit, merge_commit.snapshot)
+
             pr.target_branch.head_commit = merge_commit
             pr.target_branch.save()
             
@@ -148,18 +175,59 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         pr.closed_at = None
         if pr.target_branch and pr.target_branch.head_commit:
             pr.base_commit = pr.target_branch.head_commit
+            
+        # Refresh the PR state by wiping old reviews when re-initiated
+        pr.reviews.all().delete()
+        
         pr.save()
+
+        from .tasks import trigger_diff_generation
+        trigger_diff_generation(pr.id)
+
         return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
-    def diff(self, request, pk=None):
+    def diff(self, request, pk=None, **kwargs):
 
         pr = self.get_object()
-        if not pr.base_commit or not pr.source_branch.head_commit:
-            return Response({'error': 'Cannot generate diff for pull request without base and source commits'}, status=status.HTTP_400_BAD_REQUEST)
+
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 50))
         
-        diff = generate_diff(pr.base_commit, pr.source_branch.head_commit)
-        return Response(diff, status=status.HTTP_200_OK)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+
+        if pr.diff_status == "PROCESSING":
+            if pr.precomputed_diff:
+                # Return stale data instead of blocking
+                return Response({
+                    "status": "stale",
+                    "count": len(pr.precomputed_diff),
+                    "page": page,
+                    "page_size": page_size,
+                    "results": pr.precomputed_diff[start_idx:end_idx]
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"status": "processing", "message": "Diff is currently being generated."}, status=status.HTTP_202_ACCEPTED)
+
+        if pr.diff_status == "FAILED":
+            return Response({'error': 'Failed to precompute diff. Please try again or re-trigger.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if not pr.precomputed_diff:
+            from .tasks import trigger_diff_generation
+            trigger_diff_generation(pr.id)
+            return Response({"status": "processing", "message": "Diff calculation started. Check back shortly."}, status=status.HTTP_202_ACCEPTED)
+
+        response = pr.precomputed_diff
+        paginated_response = response[start_idx:end_idx]
+
+        return Response({
+            "status": "fresh",
+            "count": len(response),
+            "page": page,
+            "page_size": page_size,
+            "results": paginated_response
+        }, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -250,4 +318,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if pull_request.source_branch_deleted or pull_request.target_branch_deleted:
             raise ValidationError({"error": "Pull request must have both source and target branches."})
 
-        serializer.save(reviewer=reviewer, pr=pull_request)
+        current_commit_id = pull_request.source_branch.head_commit.id if pull_request.source_branch.head_commit else None
+        Review.objects.filter(
+            pr=pull_request,
+            reviewer=reviewer,
+            commit=current_commit_id
+        ).delete()
+
+        review_instance = serializer.save(reviewer=reviewer, pr=pull_request)
+        review_instance.commit = current_commit_id
+        review_instance.save()

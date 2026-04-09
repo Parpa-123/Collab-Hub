@@ -6,10 +6,11 @@ interface CommentFormProps {
   slug: string;
   model: string;
   objectId: number;
+  path?: string;
   onSuccess: () => void;
 }
 
-const CommentForm = ({ slug, model, objectId, onSuccess }: CommentFormProps) => {
+const CommentForm = ({ slug, model, objectId, path, onSuccess }: CommentFormProps) => {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,11 +20,16 @@ const CommentForm = ({ slug, model, objectId, onSuccess }: CommentFormProps) => 
     setSubmitting(true);
     setError(null);
     try {
-      await connect.post(`/repositories/${slug}/comments/`, {
+      const payload: any = {
         model,
         object_id: objectId,
         content: content.trim(),
-      });
+      };
+      if (path) {
+        payload.path = path;
+      }
+      
+      await connect.post(`/repositories/${slug}/comments/`, payload);
       setContent("");
       onSuccess();
     } catch (err: any) {

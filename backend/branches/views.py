@@ -6,6 +6,7 @@ from .serializers import BranchesSerializer, CommitSerializer
 from repositories.models import Repository
 from config.access.services import can_perform_action, get_repo_membership
 from config.access.constants import CREATE_BRANCH, DELETE_BRANCH
+from storage.services.blob_service import get_or_create_blob
 
 
 class CanManageBranches(BasePermission):
@@ -90,9 +91,21 @@ class CommitViewSet(viewsets.ModelViewSet):
             pk=self.kwargs['branch_pk'],
             repository=repo,
         )
-        serializer.save(
+
+        snapshot = serializer.validated_data.get('snapshot')
+        if snapshot:
+            new_snapshot = {}
+            for path, content in snapshot.items():
+                blob = get_or_create_blob(content)
+                new_snapshot[path] = str(blob.id)
+            serializer.validated_data['snapshot'] = new_snapshot
+
+        commit = serializer.save(
             author=self.request.user,
             repository=repo,
             branch=branch,
         )
+
+        from storage.services.tree_service import build_tree_from_snapshot
+        build_tree_from_snapshot(commit, commit.snapshot)
 

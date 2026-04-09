@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
 from common.models import CommonModel
+from django.contrib.postgres.indexes import GinIndex
 # Create your models here.
 
 class CustomUserManager(BaseUserManager):
@@ -47,3 +48,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, CommonModel):
 
     def __str__(self):
         return self.email
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['first_name']),
+            models.Index(fields=['last_name']),
+        ]

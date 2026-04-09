@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom';
-import connect from '../../axios/connect';
+import connect from "../../axios/connect";
+import FileUploadCommit from "./FileUploadCommit";
 
 export interface RepoHeader {
   name: string;
@@ -52,10 +53,16 @@ const Code = () => {
               placeholder="Go to file"
               className="bg-white border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
             />
-            <button className="border border-gray-300 px-2 py-1 rounded bg-white hover:bg-gray-100">+</button>
-            <button className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">
-              Code ▾
-            </button>
+            <div className="flex gap-2">
+              <FileUploadCommit 
+                slug={slug!} 
+                defaultBranch={repoData?.default_branch} 
+                onSuccess={() => window.location.reload()} 
+              />
+              <button className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700 font-medium">
+                Code ▾
+              </button>
+            </div>
           </div>
         </div>
 

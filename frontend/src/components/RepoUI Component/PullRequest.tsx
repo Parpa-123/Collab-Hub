@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import connect from "../../axios/connect";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   GitPullRequest, GitMerge, XCircle, RotateCcw, Plus, Search, CheckCircle2, ThumbsUp,
   MessageCircle, ChevronDown, ChevronUp,
@@ -288,9 +288,9 @@ const PullRequests = () => {
                     <div className="flex items-start gap-3 min-w-0">
                       <GitPullRequest className="w-4 h-4 mt-0.5 text-green-600 shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-[#1f2328] truncate">
+                        <Link to={`/${slug}/pullrequests/${pr.id}`} className="text-sm font-medium text-[#0969da] hover:underline truncate">
                           {pr.title}
-                        </p>
+                        </Link>
                         <p className="text-xs text-[#636c76] mt-0.5">
                           #{pr.id} · {pr.source_name} → {pr.target_name} · opened {dayjs(pr.created_at).fromNow()}
                         </p>

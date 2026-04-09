@@ -19,6 +19,13 @@ class PullRequest(CommonModel):
         ("CLOSED", "Closed"),
     ]
 
+    DIFF_STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("PROCESSING", "Processing"),
+        ("COMPLETED", "Completed"),
+        ("FAILED", "Failed"),
+    ]
+
     base_commit = models.ForeignKey(
         "branches.Commit",
         on_delete=models.SET_NULL,
@@ -50,13 +57,21 @@ class PullRequest(CommonModel):
     )
 
     title = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="OPEN"
     )
+
+    diff_status = models.CharField(
+        max_length=20,
+        choices=DIFF_STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    precomputed_diff = models.JSONField(null=True, blank=True)
 
     created_by = models.ForeignKey(
         User,
@@ -156,6 +171,10 @@ class PullRequest(CommonModel):
         ]
 
 class Review(CommonModel):
+
+
+
+    commit = models.UUIDField(null=True, blank=True)
 
     REVIEW_STATUS = [
         ("APPROVED", "Approved"),

@@ -10,6 +10,7 @@ User = get_user_model()
 
 class Activity(CommonModel):
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="activities")
+    verb = models.CharField(max_length=255, default='', blank=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')

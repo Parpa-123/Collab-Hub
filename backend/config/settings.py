@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'activity',
     'notifications',
+    'storage',
 ]
 
 MIDDLEWARE = [

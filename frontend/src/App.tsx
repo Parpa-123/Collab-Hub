@@ -11,6 +11,7 @@ import PullRequest from "./components/RepoUI Component/PullRequest";
 import Issues from "./components/RepoUI Component/Issues";
 import IssueDetail from "./components/RepoUI Component/IssueDetail";
 import NotFound from "./404 section/404";
+import PRDetailed from "./components/RepoUI Component/PRDetailed";
 
 function App() {
 
@@ -26,6 +27,7 @@ function App() {
               <Route index element={<ProtectedRouting><Code /></ProtectedRouting>} />
               <Route path="branches" element={<ProtectedRouting><Branches /></ProtectedRouting>} />
               <Route path="pullrequests" element={<ProtectedRouting><PullRequest /></ProtectedRouting>} />
+              <Route path="pullrequests/:id" element={<ProtectedRouting><PRDetailed /></ProtectedRouting>} />
               <Route path="issues" element={<ProtectedRouting><Issues /></ProtectedRouting>} />
               <Route path="issues/:id" element={<ProtectedRouting><IssueDetail /></ProtectedRouting>} />
             </Route>

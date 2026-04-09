@@ -52,74 +52,48 @@ class CommentPermission(BasePermission):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """
-    Universal Comment API
 
-    GET    /api/comments/?model=pullrequest&object_id=5
-    POST   /api/comments/
-    PATCH  /api/comments/{id}/
-    DELETE /api/comments/{id}/
-    """
-
-    queryset = Comment.objects.select_related(
-        "author",
-        "content_type"
-    ).all()
-
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, CommentPermission]
-    http_method_names = ["get", "post", "patch", "put", "delete"]
 
-    # ---------------------------------
-    # LIST
-    # ---------------------------------
     def get_queryset(self):
-        qs = Comment.objects.select_related("author", "content_type").all()
+        queryset = super().get_queryset()
+        
+        entity_type = self.request.query_params.get("model") or self.request.query_params.get("entity_type")
+        entity_id = self.request.query_params.get("object_id") or self.request.query_params.get("entity_id")
+        path = self.request.query_params.get('path')
 
-        # Detail actions (retrieve, update, delete) need access to all comments
-        if self.action != "list":
-            return qs
+        if entity_type and entity_id:
+            queryset = queryset.filter(
+                content_type=ContentType.objects.get(model=entity_type),
+                object_id=entity_id
+            )
+        
+        if path:
+            queryset = queryset.filter(path=path)
 
-        model = self.request.query_params.get("model")
-        object_id = self.request.query_params.get("object_id")
+        return queryset.order_by('-created_at')
 
-        if not model or not object_id:
-            return Comment.objects.none()
-
-        try:
-            content_type = ContentType.objects.get(model=model)
-        except ContentType.DoesNotExist:
-            return Comment.objects.none()
-
-        return qs.filter(
-            content_type=content_type,
-            object_id=object_id,
-            parent=None
-        ).prefetch_related("replies")
-
-    # ---------------------------------
-    # CREATE
-    # ---------------------------------
     def perform_create(self, serializer):
-        model = self.request.data.get("model")
-        object_id = self.request.data.get("object_id")
+        model_name = self.request.data.get('model')
+        object_id = self.request.data.get('object_id')
+        file_path = self.request.data.get('path')
+        
+        save_kwargs = {'author': self.request.user}
+        if file_path:
+            save_kwargs['path'] = file_path
+            
+        if model_name and object_id:
+            content_type = ContentType.objects.get(model=model_name)
+            save_kwargs['content_type'] = content_type
+            save_kwargs['object_id'] = object_id
 
-        if not model or not object_id:
-            raise PermissionDenied("Model and object_id required.")
-
-        try:
-            content_type = ContentType.objects.get(model=model)
-            target_object = content_type.get_object_for_this_type(id=object_id)
-        except Exception:
-            raise PermissionDenied("Invalid target object.")
-
-        repo = resolve_repository(target_object)
-
-        if not can_perform_action(self.request.user, repo, COMMENT):
-            raise PermissionDenied("You do not have permission to comment here.")
-
-        serializer.save(
-            author=self.request.user,
-            content_type=content_type,
-            object_id=object_id
-        )
+        instance = serializer.save(**save_kwargs)
+        
+        from config.events.dispatcher import dispatch_event
+        from config.events.event_types import COMMENT_CREATED
+        dispatch_event(COMMENT_CREATED, {
+            "actor": self.request.user,
+            "comment": instance
+        })

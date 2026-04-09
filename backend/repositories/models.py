@@ -45,3 +45,22 @@ class RepositoryMember(CommonModel):
     
     def __str__(self):
         return f"{self.developer} - {self.repository} - {self.role}"
+
+
+class File(CommonModel):
+    name = models.CharField(max_length=255)
+    path = models.TextField()
+    content = models.TextField()  
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
+    branch = models.ForeignKey('branches.Branches', on_delete=models.CASCADE)
+    created_by = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("path", "branch")
+        verbose_name = "File"
+        verbose_name_plural = "Files"
+    
+    def __str__(self):
+        return f"{self.path} - {self.branch}"
+        

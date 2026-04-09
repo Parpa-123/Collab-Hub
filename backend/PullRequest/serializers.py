@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import PullRequest, Review
 
 class PullRequestSerializer(serializers.ModelSerializer):
+    has_conflicts = serializers.ReadOnlyField()
+    is_mergeable = serializers.ReadOnlyField()
+
     class Meta:
         model = PullRequest
         fields = '__all__'

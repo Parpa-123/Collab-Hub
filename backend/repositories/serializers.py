@@ -89,3 +89,15 @@ class RepositoryMemberSerializer(serializers.Serializer):
     first_name = serializers.CharField(source='developer.first_name')
     last_name = serializers.CharField(source='developer.last_name')
     role = serializers.CharField()
+
+class FileUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
+    path = serializers.CharField()
+    message = serializers.CharField()
+    branch = serializers.CharField()
+
+    def validate(self, attrs):
+        path = attrs.get("path")
+        if not path.startswith("/"):
+            raise serializers.ValidationError("Path must start with /")
+        return attrs
