@@ -2,6 +2,7 @@ import React from 'react'
 import { useParams } from 'react-router-dom';
 import connect from "../../axios/connect";
 import FileUploadCommit from "./FileUploadCommit";
+import FileExplorer from "./FileExplorer";
 
 export interface RepoHeader {
   name: string;
@@ -68,23 +69,7 @@ const Code = () => {
 
         {/* File list */}
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-          <div className="bg-gray-50 p-3 text-sm border-b border-gray-200">
-            <span className="text-gray-600">Latest commit message...</span>
-          </div>
-
-          <div className="divide-y divide-gray-200">
-            {repoData?.branch_names?.map((branch) => (
-              <div
-                key={branch}
-                className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  {branch}
-                </div>
-                <span className="text-sm text-gray-500">last week</span>
-              </div>
-            ))}
-          </div>
+          <FileExplorer slug={slug!} branch={repoData?.default_branch || "main"} />
         </div>
       </div>
 

@@ -218,22 +218,31 @@ class RepositoryDetailView(ModelViewSet):
     @action(detail=True, methods=['delete'], url_path="remove-member")
     def remove_member(self, request, slug=None):
         repository = self.get_object()
-        
+
         if not IsMaintainer().has_object_permission(request, self, repository):
             return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_403_FORBIDDEN)
-        
-        member = RepositoryMember.objects.filter(repository=repository, developer=request.user).first()
 
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"message": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        member = RepositoryMember.objects.filter(repository=repository, developer_id=user_id).first()
+        if not member:
+            return Response({"message": "Member not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # If the target member is the requester themselves (leaving), apply LEAVE_REPO check
         if member.developer == request.user:
             if member.role == REPO_ADMIN:
                 is_valid, message = check_last_owner(repository, request.user, LEAVE_REPO)
                 if not is_valid:
                     return Response({"message": message}, status=status.HTTP_403_FORBIDDEN)
-        
-        if member.role == REPO_ADMIN:
-            is_valid, message = check_last_owner(repository, request.user, REMOVE_USER)
-            if not is_valid:
-                return Response({"message": message}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            # Removing someone else — guard against removing the last admin
+            if member.role == REPO_ADMIN:
+                is_valid, message = check_last_owner(repository, request.user, REMOVE_USER)
+                if not is_valid:
+                    return Response({"message": message}, status=status.HTTP_403_FORBIDDEN)
+
         member.delete()
         return Response({"message": "Member removed successfully"}, status=status.HTTP_200_OK)
 
@@ -298,8 +307,16 @@ class RepositoryTree(APIView):
 
     def get(self, request, slug):
         path = request.query_params.get("path","")
+        branch_name = request.query_params.get("branch")
 
-        commit = Commit.objects.filter(repository__slug=slug).order_by("-created_at").first()
+        if branch_name:
+            branch = Branches.objects.filter(repository__slug=slug, name=branch_name).first()
+            if not branch or not branch.head_commit:
+                return Response({"files": []}, status=status.HTTP_404_NOT_FOUND)
+            commit = branch.head_commit
+        else:
+            commit = Commit.objects.filter(repository__slug=slug).order_by("-created_at").first()
+
         if not commit or not hasattr(commit, 'tree'):
             return Response({"files": []}, status=status.HTTP_404_NOT_FOUND)
         
@@ -322,7 +339,11 @@ class RepositoryTree(APIView):
             for node in nodes
         ]
         
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({
+            "branch": branch_name or "main",
+            "commit_id": str(commit.id),
+            "files": data
+        }, status=status.HTTP_200_OK)
 
 
 class FileContent(APIView):
@@ -330,10 +351,19 @@ class FileContent(APIView):
 
     def get(self, request, slug):
         path = request.query_params.get("path")
+        branch_name = request.query_params.get("branch")
+
         if not path:
             return Response({'error' : 'Path is required'},status = status.HTTP_400_BAD_REQUEST)
         
-        commit =  Commit.objects.filter(repository__slug=slug).order_by('-created_at').first()
+        if branch_name:
+            branch = Branches.objects.filter(repository__slug=slug, name=branch_name).first()
+            if not branch or not branch.head_commit:
+                return Response({'error' : 'Branch or commit not found'}, status=status.HTTP_404_NOT_FOUND)
+            commit = branch.head_commit
+        else:
+            commit = Commit.objects.filter(repository__slug=slug).order_by('-created_at').first()
+
         if not commit or not hasattr(commit, 'tree'):
             return Response({'error' : 'No commit found'},status = status.HTTP_404_NOT_FOUND)
         
@@ -342,51 +372,23 @@ class FileContent(APIView):
         if not node:
             return Response({'error' : 'No node found'},status = status.HTTP_404_NOT_FOUND)
         
-        return Response({'content' : node.content},status = status.HTTP_200_OK)
+        content = node.blob.content if node.blob else ""
+        return Response({'content' : content},status = status.HTTP_200_OK)
 
 class CommitDiffView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self,request,slug):
+    def get(self, request, slug):
         base_id = request.query_params.get("base_id")
         head_id = request.query_params.get("head_id")
         if not base_id or not head_id:
-            return Response({'error' : 'Base and head IDs are required'},status = status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Base and head IDs are required'}, status=status.HTTP_400_BAD_REQUEST)
+
         base_commit = Commit.objects.filter(repository__slug=slug, id=base_id).first()
         head_commit = Commit.objects.filter(repository__slug=slug, id=head_id).first()
         if not base_commit or not head_commit:
-            return Response({'error' : 'No commit found'},status = status.HTTP_404_NOT_FOUND)
-        
-        base_tree = getattr(base_commit, 'tree', None)
-        head_tree = getattr(head_commit, 'tree', None)
-        if not base_tree or not head_tree:
-            return Response({'error' : 'No tree found'},status = status.HTTP_404_NOT_FOUND)
-        
-        base_nodes = {
-            node.path:node
-            for node in TreeNode.objects.filter(tree=base_tree, type='file')
-        }
-        head_nodes = {
-            node.path:node
-            for node in TreeNode.objects.filter(tree=head_tree, type='file')
-        }
-        all_path = set(base_nodes.keys()) | set(head_nodes.keys())
-        diff = []
-        for path in all_path:
-            base_node = base_nodes.get(path)
-            head_node = head_nodes.get(path)
-            
-            old_content = base_node.blob.content if base_node else ""
-            new_content = head_node.blob.content if head_node else ""
+            return Response({'error': 'No commit found'}, status=status.HTTP_404_NOT_FOUND)
 
-            if old_content != new_content:
-                diff = generate_diff(old_content, new_content)
-                diff.append({
-                    "file_path": path,
-                    "status": "modified",
-                    "diff": diff,
-                    "additions": additions,
-                    "deletions": deletions,
-                })
-        return Response(diff, status = status.HTTP_200_OK)
+        # generate_diff handles the full diff across both commit snapshots
+        result = generate_diff(base_commit, head_commit)
+        return Response(result, status=status.HTTP_200_OK)

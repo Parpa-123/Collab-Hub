@@ -4,6 +4,7 @@ import { UserContextProvider } from "./Context/userContext";
 import ProtectedRouting from "./Context/ProtectedRouting";
 import UserProfile from "./components/Profile Components/UserProfile";
 import Repo from "./components/Repo";
+import Dashboard from "./components/Dashboard";
 import MainLayout from "./components/RepoUI Component/MainLayout";
 import Code from "./components/RepoUI Component/Code";
 import Branches from "./components/RepoUI Component/Branches";
@@ -12,6 +13,7 @@ import Issues from "./components/RepoUI Component/Issues";
 import IssueDetail from "./components/RepoUI Component/IssueDetail";
 import NotFound from "./404 section/404";
 import PRDetailed from "./components/RepoUI Component/PRDetailed";
+import FileViewer from "./components/RepoUI Component/FileViewer";
 
 function App() {
 
@@ -20,7 +22,7 @@ function App() {
       <UserContextProvider>
         <Routes>
           <Route path="/" element={<Header />}>
-            <Route index element={<h1>Home</h1>} />
+            <Route index element={<Dashboard />} />
             <Route path="profile" element={<ProtectedRouting><UserProfile /></ProtectedRouting>} />
             <Route path="new" element={<ProtectedRouting><Repo /></ProtectedRouting>} />
             <Route path=":slug" element={<ProtectedRouting><MainLayout /></ProtectedRouting>}>
@@ -30,6 +32,7 @@ function App() {
               <Route path="pullrequests/:id" element={<ProtectedRouting><PRDetailed /></ProtectedRouting>} />
               <Route path="issues" element={<ProtectedRouting><Issues /></ProtectedRouting>} />
               <Route path="issues/:id" element={<ProtectedRouting><IssueDetail /></ProtectedRouting>} />
+              <Route path="blob" element={<ProtectedRouting><FileViewer /></ProtectedRouting>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
