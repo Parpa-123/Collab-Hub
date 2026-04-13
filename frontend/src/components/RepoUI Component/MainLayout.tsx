@@ -4,6 +4,9 @@ import connect from "../../axios/connect";
 import type { RepoStruct } from "../Profile Components/UserProfile";
 import type { User } from "../../Context/userContext";
 import NotFound from "../../404 section/404";
+import { Button } from "@/components/ui/button";
+import MembersListDialog from "./MembersListDialog";
+import AddMemberDialog from "./AddMemberDialog";
 
 export interface SearchUser extends User {
   id: number;
@@ -18,39 +21,6 @@ interface Member {
   last_name: string;
   role: string;
 }
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const ROLES = [
-  { value: "viewer", label: "Viewer" },
-  { value: "member", label: "Member" },
-  { value: "maintainer", label: "Maintainer" },
-  { value: "admin", label: "Admin" },
-];
-
-const roleBadgeClass: Record<string, string> = {
-  admin: "bg-purple-100 text-purple-700",
-  maintainer: "bg-blue-100 text-blue-700",
-  member: "bg-green-100 text-green-700",
-  viewer: "bg-gray-100 text-gray-600",
-};
 
 const MainLayout = () => {
   const { slug } = useParams();
@@ -212,140 +182,31 @@ const MainLayout = () => {
       <Outlet />
 
       {/* ── MEMBER LIST DIALOG ── */}
-      <Dialog open={membersModal} onOpenChange={showMembersModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Repository members</DialogTitle>
-            <DialogDescription>
-              {isAdmin
-                ? "As an admin, you can change member roles."
-                : "Viewing repository members. Only admins can change roles."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {roleError && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
-              {roleError}
-            </p>
-          )}
-
-          <ScrollArea className="h-72 border rounded-md divide-y">
-            {members.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="text-xs">
-                      {member.first_name?.[0]?.toUpperCase() || member.email?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{member.first_name} {member.last_name}</p>
-                    <p className="text-xs text-gray-500">{member.email}</p>
-                  </div>
-                </div>
-
-                {isAdmin ? (
-                  <Select
-                    value={member.role}
-                    onValueChange={(newRole: string) => handleRoleChange(member.member_id, newRole)}
-                    disabled={updatingMemberId === member.member_id}
-                  >
-                    <SelectTrigger className="w-32 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((r) => (
-                        <SelectItem key={r.value} value={r.value} className="text-xs">
-                          {r.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleBadgeClass[member.role] ?? "bg-gray-100 text-gray-600"}`}
-                  >
-                    {member.role}
-                  </span>
-                )}
-              </div>
-            ))}
-          </ScrollArea>
-
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => showMembersModal(false)}>
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MembersListDialog
+        open={membersModal}
+        onOpenChange={showMembersModal}
+        members={members}
+        isAdmin={isAdmin}
+        roleError={roleError}
+        updatingMemberId={updatingMemberId}
+        onRoleChange={handleRoleChange}
+      />
 
       {/* ── ADD MEMBER DIALOG ── */}
-      <Dialog open={modal} onOpenChange={showModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add repository member</DialogTitle>
-            <DialogDescription>
-              Search and select a user to add to this repository.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Input
-            placeholder="Search users..."
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSearch()}
-          />
-
-          <ScrollArea className="h-64 border rounded-md p-2">
-            {loading ? (
-              <p className="text-sm text-gray-500 text-center mt-4">Searching...</p>
-            ) : searchResult.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center mt-4">No users found</p>
-            ) : (
-              <div className="space-y-2">
-                {searchResult.map((user) => (
-                  <div
-                    key={user.pk}
-                    onClick={() => setSelectedUser(user)}
-                    className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${selectedUser?.pk === user.pk ? "bg-gray-100 border" : "hover:bg-gray-50"
-                      }`}
-                  >
-                    <Avatar>
-                      <AvatarFallback>
-                        {user.username?.[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{user.username}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => showModal(false)}>Cancel</Button>
-            <Button disabled={!selectedUser} onClick={handleAddMember}>Add member</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AddMemberDialog
+        open={modal}
+        onOpenChange={showModal}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onSearch={handleSearch}
+        loading={loading}
+        searchResult={searchResult}
+        selectedUser={selectedUser}
+        onSelectUser={setSelectedUser}
+        selectedRole={selectedRole}
+        onSelectedRoleChange={setSelectedRole}
+        onAddMember={handleAddMember}
+      />
     </div>
   );
 };

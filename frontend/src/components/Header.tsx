@@ -68,12 +68,33 @@ const Header = () => {
     }
   }
 
+  const redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI || "http://localhost:5173/auth/callback"
+
   const loginWithGoogle = () => {
-    window.location.href = "http://localhost:8000/api/auth/google/login/"
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "openid email profile",
+      state: "google",
+      access_type: "online",
+      prompt: "select_account",
+    })
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
   }
 
   const loginWithMicrosoft = () => {
-    window.location.href = "http://localhost:8000/api/auth/microsoft/login/"
+    const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "openid email profile",
+      state: "microsoft",
+      prompt: "select_account",
+    })
+    window.location.href = `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?${params}`
   }
 
   return (
