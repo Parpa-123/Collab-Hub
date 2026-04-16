@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, Loader2 } from "lucide-react";
 import connect from "../../axios/connect";
+import { errorToast, successToast } from "../../lib/toast";
 
 interface ReplyFormProps {
     slug: string;
@@ -40,13 +41,14 @@ const ReplyForm = ({
                 content: content.trim(),
             });
             setContent("");
+            successToast("Reply posted!");
             onSuccess();
         } catch (err: any) {
-            setError(
-                err.response?.data?.detail ||
+            const errorMsg = err.response?.data?.detail ||
                 err.response?.data?.content?.[0] ||
-                "Failed to post reply."
-            );
+                "Failed to post reply.";
+            setError(errorMsg);
+            errorToast(err, errorMsg);
         } finally {
             setSubmitting(false);
         }

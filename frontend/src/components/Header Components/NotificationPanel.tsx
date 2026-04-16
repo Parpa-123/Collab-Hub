@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import connect from "../../axios/connect"
+import { fetchAllPages } from "@/lib/pagination"
+import { errorToast, successToast } from "../../lib/toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Bell, CheckCheck, Loader2, Inbox } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -20,18 +22,18 @@ const NotificationPanel = ({ isLoggedIn }: NotificationPanelProps) => {
     try {
       const res = await connect.get("/notifications/unread_count/")
       setUnreadCount(res.data.count)
-    } catch {
-      /* silent */
+    } catch (error) {
+      errorToast(error, "Failed to load unread notifications count");
     }
   }, [])
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await connect.get("/notifications/")
-      setNotifications(res.data.results ?? res.data)
-    } catch {
-      /* silent */
+      const data = await fetchAllPages<NotificationData>(connect, "/notifications/")
+      setNotifications(data)
+    } catch (error) {
+      errorToast(error, "Failed to load notifications");
     } finally {
       setLoading(false)
     }
@@ -60,8 +62,8 @@ const NotificationPanel = ({ isLoggedIn }: NotificationPanelProps) => {
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       )
       setUnreadCount((c) => Math.max(0, c - 1))
-    } catch {
-      /* silent */
+    } catch (error) {
+      errorToast(error, "Failed to mark notification as read");
     }
   }
 
@@ -71,8 +73,9 @@ const NotificationPanel = ({ isLoggedIn }: NotificationPanelProps) => {
       await connect.post("/notifications/mark_all_read/")
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
       setUnreadCount(0)
-    } catch {
-      /* silent */
+      successToast("All notifications marked as read");
+    } catch (error) {
+      errorToast(error, "Failed to mark all notifications as read");
     } finally {
       setMarkingAll(false)
     }

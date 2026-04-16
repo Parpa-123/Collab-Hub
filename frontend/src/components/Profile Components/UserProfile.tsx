@@ -6,6 +6,8 @@ import UpdateProfile from "./UpdateProfile"
 import ProfileDetails from "./ProfileDetails"
 import ProfileRepositories from "./ProfileRepositories"
 import connect from "../../axios/connect";
+import { fetchAllPages } from "@/lib/pagination";
+import { errorToast } from "../../lib/toast";
 import { useEffect } from "react";
 
 export interface RepoStruct {
@@ -26,10 +28,10 @@ const UserProfile = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await connect.get('/repositories/');
-        setRepos(res.data.results ?? res.data);
+        const data = await fetchAllPages<RepoStruct>(connect, "/repositories/");
+        setRepos(data);
       } catch (error) {
-        console.error('Error fetching repositories:', error);
+        errorToast(error, "Failed to load repositories");
       }
     })();
   }, []);

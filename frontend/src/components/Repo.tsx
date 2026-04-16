@@ -2,6 +2,7 @@ import React, { useContext, useEffect } from 'react'
 import { userContext } from '../Context/userContext'
 import connect from '../axios/connect';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { errorToast, successToast } from '../lib/toast';
 
 interface VisibilityOption {
   value: string;
@@ -21,7 +22,7 @@ const Repo = () => {
         const res = await connect.get('/repositories/options/');
         setVisibilityOptions(res.data.visibility);
       } catch (error) {
-        console.error('Error fetching visibility options:', error);
+        errorToast(error, 'Failed to load visibility options');
       }
     })();
   }, []);
@@ -37,9 +38,10 @@ const Repo = () => {
         description,
         visibility
       });
+      successToast('Repository created successfully!');
       nav("profile?tab=repositories");
     } catch (error) {
-      console.error('Error creating repository:', error);
+      errorToast(error, 'Failed to create repository');
     }
   }
 

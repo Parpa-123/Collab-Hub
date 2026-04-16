@@ -1,0 +1,84 @@
+databases:
+  - name: project-2-db
+    databaseName: project2
+    user: admin
+
+services:
+  - type: redis
+    name: project-2-redis
+    ipAllowList: []
+    plan: free
+
+  - type: web
+    name: project-2-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn config.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: project-2-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://project-2-frontend.onrender.com 
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://project-2-frontend.onrender.com
+      - key: DEBUG
+        value: "False"
+
+  - type: worker
+    name: project-2-celery
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A config worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: project-2-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: project-2-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: project-2-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: corepack enable && npm install -g pnpm && pnpm install && pnpm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://project-2-backend.onrender.com

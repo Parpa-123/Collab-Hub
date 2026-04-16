@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import connect from '../../axios/connect';
+import { fetchAllPages } from '@/lib/pagination';
 import { useParams } from 'react-router-dom';
 import BranchesCreation from './BranchesCreation';
 import { GitBranch, Trash2, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { errorToast, successToast } from '../../lib/toast';
 
 dayjs.extend(relativeTime);
 
@@ -22,10 +24,10 @@ const Branches = () => {
 
   const fetchBranches = async () => {
     try {
-      const res = await connect.get(`/repositories/${slug}/branches`);
-      setBranches(res.data.results ?? res.data);
+      const data = await fetchAllPages<Branch>(connect, `/repositories/${slug}/branches`);
+      setBranches(data);
     } catch (error) {
-      console.error('Error fetching branches:', error);
+      errorToast(error, 'Failed to fetch branches');
     }
   };
 
@@ -42,9 +44,10 @@ const Branches = () => {
       };
 
       await connect.post(`/repositories/${slug}/branches/`, payload);
+      successToast('Branch created successfully!');
       fetchBranches();
     } catch (error) {
-      console.error('Error creating branch:', error);
+      errorToast(error, 'Failed to create branch');
     }
   };
 
@@ -54,9 +57,9 @@ const Branches = () => {
     try {
       await connect.delete(`/repositories/${slug}/branches/${branchId}/`);
       setBranches((prev) => prev.filter((b) => b.id !== branchId));
-    } catch (error: any) {
-      console.error('Error deleting branch:', error);
-      alert(error.response?.data?.message || 'Failed to delete branch');
+      successToast('Branch deleted successfully!');
+    } catch (error) {
+      errorToast(error, 'Failed to delete branch');
     }
   };
 
@@ -68,10 +71,10 @@ const Branches = () => {
         is_default: formData.get('is_default') === 'on',
       };
       await connect.patch(`/repositories/${slug}/branches/${id}/`, payload);
+      successToast('Branch updated successfully!');
       fetchBranches();
     } catch (error) {
-      console.error('Error updating branch:', error);
-      alert('Failed to update branch');
+      errorToast(error, 'Failed to update branch');
     }
   };
 

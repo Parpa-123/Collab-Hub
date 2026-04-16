@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import connect from "../../axios/connect";
 import { userContext } from "../../Context/userContext";
+import { errorToast, successToast } from "../../lib/toast";
 import ReplyForm from "./ReplyForm";
 
 dayjs.extend(relativeTime);
@@ -102,9 +103,10 @@ const CommentItem = ({
                 content: editContent.trim(),
             });
             setEditing(false);
+            successToast("Comment updated!");
             onRefresh();
-        } catch {
-            /* keep form open */
+        } catch (error) {
+            errorToast(error, "Failed to update comment");
         } finally {
             setSaving(false);
         }
@@ -114,9 +116,10 @@ const CommentItem = ({
         setDeleting(true);
         try {
             await connect.delete(`/repositories/${slug}/comments/${comment.id}/`);
+            successToast("Comment deleted!");
             onRefresh();
-        } catch {
-            /* silent */
+        } catch (error) {
+            errorToast(error, "Failed to delete comment");
         } finally {
             setDeleting(false);
             setConfirmDelete(false);

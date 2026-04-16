@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import dj_database_url
 from datetime import timedelta
 load_dotenv()
 
@@ -24,15 +25,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+RENDER = os.getenv("RENDER", "").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False" if RENDER else "True").lower() == "true"
 
 if DEBUG:
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-ALLOWED_HOSTS = []
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+render_external_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+default_allowed_hosts = ["localhost", "127.0.0.1"]
+if render_external_hostname:
+    default_allowed_hosts.append(render_external_hostname)
+
+allowed_hosts_env = os.getenv("ALLOWED_HOSTS")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+else:
+    ALLOWED_HOSTS = default_allowed_hosts
 
 
 # Application definition
@@ -72,8 +84,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -84,14 +97,24 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = [
+default_cors_allowed_origins = [
+    "http://localhost:3000",
     "http://localhost:5173",
 ]
+if FRONTEND_URL not in default_cors_allowed_origins:
+    default_cors_allowed_origins.append(FRONTEND_URL)
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8000",
-    "http://localhost:5173",
-]
+cors_allowed_origins_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if cors_allowed_origins_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip().rstrip("/") for origin in cors_allowed_origins_env.split(",") if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = default_cors_allowed_origins
+
+csrf_trusted_origins_env = os.getenv("CSRF_TRUSTED_ORIGINS")
+if csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip().rstrip("/") for origin in csrf_trusted_origins_env.split(",") if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(["http://localhost:8000", *CORS_ALLOWED_ORIGINS]))
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
@@ -109,11 +132,14 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"
 
 # Redirect after OAuth login - goes to frontend
-LOGIN_REDIRECT_URL = "http://localhost:5173/"
-LOGOUT_REDIRECT_URL = "http://localhost:5173/"
+LOGIN_REDIRECT_URL = f"{FRONTEND_URL}/"
+LOGOUT_REDIRECT_URL = f"{FRONTEND_URL}/"
+
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ROOT_URLCONF = "config.urls"
 
@@ -164,12 +190,24 @@ SPECTACULAR_SETTINGS = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is required when DEBUG=False.")
+    DATABASES = {
+        "default": dj_database_url.parse(
+            database_url,
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
@@ -209,7 +247,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -218,6 +258,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
+            "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
+            "key": ""
+        },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {
             "access_type": "online",
@@ -225,7 +270,13 @@ SOCIALACCOUNT_PROVIDERS = {
         "OAUTH_PKCE_ENABLED": True,
     },
     "microsoft": {
-        "TENANT": "consumers",
+        "APP": {
+            "client_id": os.getenv("MICROSOFT_CLIENT_ID", ""),
+            "secret": os.getenv("MICROSOFT_CLIENT_SECRET", ""),
+            "key": ""
+        },
+        "TENANT": "common",
+        "SCOPE": ["User.Read", "email", "profile", "openid"],
     },
 }
 
@@ -244,19 +295,17 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'refresh',
     'JWT_AUTH_HTTPONLY': True,
     'JWT_AUTH_SAMESITE': 'Lax',
-    'JWT_AUTH_SECURE': False,
+    'JWT_AUTH_SECURE': not DEBUG,
     'SESSION_LOGIN': False,
 }
 
-
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
-# SECURE_BROWSER_XSS_FILTER = True
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-
-
-# X_FRAME_OPTIONS = 'DENY'
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "true").lower() == "true"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import connect from "../../axios/connect";
+import { errorToast } from "../../lib/toast";
 import { Folder, FileText, ChevronRight, CornerLeftUp } from "lucide-react";
 
 export interface FileNode {
@@ -44,7 +45,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
       setCommitId(res.data.commit_id || null);
       setCurrentPath(path);
     } catch (error) {
-      console.error("Error fetching tree:", error);
+      errorToast(error, "Failed to load directory");
       setFiles([]);
     } finally {
       setLoading(false);

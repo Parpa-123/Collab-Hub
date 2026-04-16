@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import connect from "../../axios/connect";
+import { fetchAllPages } from "@/lib/pagination";
 import { Circle } from "lucide-react";
 import IssueList from "./IssueList";
 import LabelManagerDialog from "./LabelManagerDialog";
 import CreateIssueDialog from "./CreateIssueDialog";
+import { errorToast, successToast } from "../../lib/toast";
 
 import type { SearchUser } from "./MainLayout";
 
@@ -60,7 +62,6 @@ const Issues = () => {
   const [selectedLabels, setSelectedLabels] = React.useState<number[]>([]);
 
   const [labelDialogOpen, setLabelDialogOpen] = React.useState(false);
-  const [creatingLabel, setCreatingLabel] = React.useState(false);
   const [editingLabel, setEditingLabel] = React.useState<Label | null>(null);
 
   const [newLabel, setNewLabel] = React.useState({
@@ -75,15 +76,15 @@ const Issues = () => {
 
     const fetchData = async () => {
       try {
-        const [issuesRes, labelsRes] = await Promise.all([
-          connect.get(`/repositories/${slug}/issues/`),
-          connect.get(`/repositories/${slug}/labels/`),
+        const [issueList, labelList] = await Promise.all([
+          fetchAllPages<Issue>(connect, `/repositories/${slug}/issues/`),
+          fetchAllPages<Label>(connect, `/repositories/${slug}/labels/`),
         ]);
 
-        setIssues(issuesRes.data.results ?? issuesRes.data);
-        setLabels(labelsRes.data.results ?? labelsRes.data);
+        setIssues(issueList);
+        setLabels(labelList);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        errorToast(error, "Failed to load issues and labels");
       } finally {
         setLoading(false);
       }
@@ -128,8 +129,9 @@ const Issues = () => {
       setParent("");
       setSelectedLabels([]);
       setIssueDialogOpen(false);
-    } catch (error: any) {
-      console.error("Failed to create issue:", error?.response?.data || error);
+      successToast("Issue created successfully!");
+    } catch (error) {
+      errorToast(error, "Failed to create issue");
     } finally {
       setCreatingIssue(false);
     }
@@ -141,8 +143,9 @@ const Issues = () => {
     try {
       await connect.delete(`/repositories/${slug}/issues/${id}/`);
       setIssues((prev) => prev.filter((i) => i.id !== id));
+      successToast("Issue deleted successfully!");
     } catch (error) {
-      console.error("Error deleting issue:", error);
+      errorToast(error, "Failed to delete issue");
     }
   };
 
@@ -160,8 +163,6 @@ const Issues = () => {
     if (!newLabel.name.trim() || !slug) return;
 
     try {
-      setCreatingLabel(true);
-
       if (editingLabel) {
         const res = await connect.patch(
           `/repositories/${slug}/labels/${editingLabel.id}/`,
@@ -182,10 +183,9 @@ const Issues = () => {
 
       setEditingLabel(null);
       setNewLabel({ name: "", color: "000000", description: "" });
+      successToast(editingLabel ? "Label updated!" : "Label created!");
     } catch (error: any) {
-      console.error("Failed to save label:", error?.response?.data || error);
-    } finally {
-      setCreatingLabel(false);
+      errorToast(error, "Failed to save label");
     }
   };
 
@@ -202,8 +202,9 @@ const Issues = () => {
         setEditingLabel(null);
         setNewLabel({ name: "", color: "000000", description: "" });
       }
+      successToast("Label deleted successfully!");
     } catch (error) {
-      console.error("Error deleting label:", error);
+      errorToast(error, "Failed to delete label");
     }
   };
 

@@ -2,17 +2,9 @@ import { useEffect, useRef, useContext } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { userContext } from "../Context/userContext"
 import connect from "../axios/connect"
+import { errorToast, warningToast } from "../lib/toast"
 
-/**
- * OAuth callback handler.
- *
- * After the user authorises with Google / Microsoft, the provider redirects
- * back to /auth/callback?code=…&state=…
- *
- * This component extracts the code, determines which provider was used
- * (encoded in `state`), POSTs the code to the matching backend endpoint,
- * stores the JWT tokens and redirects to the dashboard.
- */
+
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -28,7 +20,7 @@ const OAuthCallback = () => {
     const state = searchParams.get("state") // "google" or "microsoft"
 
     if (!code || !state) {
-      console.error("OAuth callback missing code or state")
+      warningToast("OAuth callback missing code or state")
       navigate("/", { replace: true })
       return
     }
@@ -40,7 +32,7 @@ const OAuthCallback = () => {
 
     const endpoint = endpointMap[state]
     if (!endpoint) {
-      console.error("Unknown OAuth provider:", state)
+      warningToast(`Unknown OAuth provider: ${state}`)
       navigate("/", { replace: true })
       return
     }
@@ -56,12 +48,16 @@ const OAuthCallback = () => {
         localStorage.setItem("refreshToken", res.data.refresh)
 
         // Fetch user profile & update context
-        const userRes = await connect.get("accounts/me/")
-        setLogin(userRes.data)
+        if (res.data.user) {
+          setLogin(res.data.user)
+        } else {
+          const userRes = await connect.get("accounts/me/")
+          setLogin(userRes.data)
+        }
 
         navigate("/", { replace: true })
       } catch (error) {
-        console.error("OAuth login failed:", error)
+        errorToast(error, "OAuth login failed")
         navigate("/", { replace: true })
       }
     }

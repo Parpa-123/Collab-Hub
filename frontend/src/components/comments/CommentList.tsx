@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { MessageCircle, Loader2, AlertCircle } from "lucide-react";
 import connect from "../../axios/connect";
+import { fetchAllPages } from "@/lib/pagination";
 import CommentItem, { type CommentData } from "./CommentItem";
 import CommentForm from "./CommentForm";
 
@@ -24,13 +25,15 @@ const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) 
             const url = path
                 ? `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}&path=${encodeURIComponent(path)}`
                 : `/repositories/${slug}/comments/?model=${model}&object_id=${objectId}`;
-            const res = await connect.get(url);
-            const data = res.data.results ?? res.data;
-            setComments(Array.isArray(data) ? data : []);
-        } catch (err: any) {
-            setError(
-                err.response?.data?.detail || "Failed to load comments."
-            );
+            const data = await fetchAllPages<CommentData>(connect, url);
+            setComments(data);
+        } catch (err: unknown) {
+            if (typeof err === "object" && err !== null) {
+                const maybeError = err as { response?: { data?: { detail?: string } } };
+                setError(maybeError.response?.data?.detail || "Failed to load comments.");
+            } else {
+                setError("Failed to load comments.");
+            }
         } finally {
             setLoading(false);
         }

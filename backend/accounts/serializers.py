@@ -50,7 +50,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.check_password(password):
             raise serializers.ValidationError('Incorrect password')
         
-        return super().validate(attrs)
+        data = super().validate(attrs)
+        
+        # Include serialized user data in the response
+        user_serializer = AutenticatedUserSerializer(user)
+        data['user'] = user_serializer.data
+        return data
 
 class AutenticatedUserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
 import connect from "../../axios/connect";
+import { errorToast, successToast } from "../../lib/toast";
 import type { RepoStruct } from "../Profile Components/UserProfile";
 import type { User } from "../../Context/userContext";
 import NotFound from "../../404 section/404";
@@ -45,7 +46,7 @@ const MainLayout = () => {
       const res = await connect.get(`/repositories/${slug}/`);
       setRepo(res.data);
     } catch (err: any) {
-      console.error("Error fetching repository:", err);
+      errorToast(err, "Failed to load repository");
       if (err.response?.status === 404) {
         setIsNotFound(true);
       }
@@ -57,7 +58,7 @@ const MainLayout = () => {
       const res = await connect.get(`/repositories/${slug}/members/`);
       setMembers(res.data.results ?? res.data);
     } catch (err) {
-      console.error("Error fetching members:", err);
+      errorToast(err, "Failed to load members");
     }
   };
 
@@ -66,7 +67,7 @@ const MainLayout = () => {
       const res = await connect.get(`/repositories/${slug}/my-role/`);
       setMyRole(res.data.role);
     } catch (err) {
-      console.error("Error fetching role:", err);
+      errorToast(err, "Failed to load your role");
     }
   };
 
@@ -83,7 +84,7 @@ const MainLayout = () => {
       const res = await connect.get(`/repositories/${slug}/search-users/?search=${searchQuery}`);
       setSearchResult(res.data.results ?? res.data);
     } catch (err) {
-      console.error("Error searching users:", err);
+      errorToast(err, "Failed to search users");
     } finally {
       setLoading(false);
     }
@@ -98,10 +99,11 @@ const MainLayout = () => {
       });
       setSearchResult((prev) => prev.filter((u) => u.id !== selectedUser.id));
       setSelectedUser(null);
+      successToast("Member added successfully!");
       fetchMembers();
     } catch (error: any) {
-      console.error("Error adding member:", error);
-      alert(error.response?.data?.non_field_errors?.[0] || error.response?.data?.message || "Failed to add member");
+      const errorMsg = error.response?.data?.non_field_errors?.[0] || error.response?.data?.message || "Failed to add member";
+      errorToast(error, errorMsg);
     }
   };
 

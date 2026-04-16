@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom';
 import connect from "../../axios/connect";
+import { errorToast } from "../../lib/toast";
 import FileUploadCommit from "./FileUploadCommit";
 import FileExplorer from "./FileExplorer";
 
@@ -23,7 +24,7 @@ const Code = () => {
         const data = await connect.get(`/repositories/${slug}/`);
         setRepoData(data.data);
       } catch (error) {
-        console.log(error);
+        errorToast(error, "Failed to load repository data");
       }
     };
     fetchRepoData();

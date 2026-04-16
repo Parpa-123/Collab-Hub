@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
+import { errorToast } from "../../lib/toast";
 
 /* ── Language mapping from file extension ── */
 const EXT_TO_LANG: Record<string, string> = {
@@ -80,7 +81,7 @@ const FileViewer = () => {
         });
         setContent(res.data.content ?? "");
       } catch (err: any) {
-        console.error("Failed to load file:", err);
+        errorToast(err, "Failed to load file");
         setError(
           err.response?.data?.error || "Failed to load file content."
         );

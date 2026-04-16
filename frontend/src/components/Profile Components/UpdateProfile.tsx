@@ -1,7 +1,8 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import connect from '../../axios/connect'
 import { userContext } from '../../Context/userContext'
 import { useNavigate } from 'react-router-dom'
+import { errorToast, successToast } from '../../lib/toast'
 
 interface UpdateProfileProps {
     setIsEditing: (isEditing: boolean) => void
@@ -15,17 +16,16 @@ const UpdateProfile = ({ setIsEditing }: UpdateProfileProps) => {
         const { firstName, lastName, email, bio } = Object.fromEntries(formData);
 
         try {
-            const res = await connect.patch('/accounts/register/', {
+            await connect.patch('/accounts/register/', {
                 first_name: firstName,
                 last_name: lastName,
                 email: email,
                 bio: bio
             })
-            console.log("Profile updated successfully", res.data)
-            
+            successToast("Profile updated successfully!");
             navigate(0);
         } catch (error) {
-            console.log(error)
+            errorToast(error, "Failed to update profile");
         }
     }
     return (
