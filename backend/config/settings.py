@@ -100,6 +100,7 @@ MIDDLEWARE = [
 default_cors_allowed_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://collab-hub-1.onrender.com"
 ]
 if FRONTEND_URL not in default_cors_allowed_origins:
     default_cors_allowed_origins.append(FRONTEND_URL)
