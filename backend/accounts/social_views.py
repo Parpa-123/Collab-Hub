@@ -11,7 +11,7 @@ class GoogleLogin(SocialLoginView):
     Use this endpoint for SPA/API-based OAuth login.
     """
     adapter_class = GoogleOAuth2Adapter
-    callback_url = "http://localhost:5173/auth/callback"
+    callback_url = f"{settings.FRONTEND_URL}/auth/callback"
     client_class = OAuth2Client
 
 
@@ -21,5 +21,5 @@ class MicrosoftLogin(SocialLoginView):
     Use this endpoint for SPA/API-based OAuth login.
     """
     adapter_class = MicrosoftGraphOAuth2Adapter
-    callback_url = "http://localhost:5173/auth/callback"
+    callback_url = f"{settings.FRONTEND_URL}/auth/callback"
     client_class = OAuth2Client
