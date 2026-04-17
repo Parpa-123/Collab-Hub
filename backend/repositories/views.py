@@ -303,10 +303,18 @@ class OptionAPIView(APIView):
 
 
 class RepositoryTree(APIView):
-    permission_classes = [IsAuthenticated]
+    # Allow public repository access; require repo membership for private repos
 
     def get(self, request, slug):
         path = request.query_params.get("path","")
+        repository = Repository.objects.filter(slug=slug).first()
+        if not repository:
+            return Response({"files": []}, status=status.HTTP_404_NOT_FOUND)
+
+        # If repository is private, ensure the requester is a member
+        if repository.visibility != Repository.Visibility.PUBLIC:
+            if not IsRepositoryMember().has_object_permission(request, self, repository):
+                return Response({"message": "You are not authorized to view this repository"}, status=status.HTTP_403_FORBIDDEN)
         branch_name = request.query_params.get("branch")
 
         if branch_name:
@@ -347,11 +355,19 @@ class RepositoryTree(APIView):
 
 
 class FileContent(APIView):
-    permission_classes = [IsAuthenticated]
+    # Allow public repository access; require repo membership for private repos
 
     def get(self, request, slug):
         path = request.query_params.get("path")
         branch_name = request.query_params.get("branch")
+        repository = Repository.objects.filter(slug=slug).first()
+        if not repository:
+            return Response({'error' : 'Repository not found'}, status = status.HTTP_404_NOT_FOUND)
+
+        # Allow access to public repos; otherwise enforce membership
+        if repository.visibility != Repository.Visibility.PUBLIC:
+            if not IsRepositoryMember().has_object_permission(request, self, repository):
+                return Response({"message": "You are not authorized to view this file"}, status=status.HTTP_403_FORBIDDEN)
 
         if not path:
             return Response({'error' : 'Path is required'},status = status.HTTP_400_BAD_REQUEST)
@@ -376,11 +392,19 @@ class FileContent(APIView):
         return Response({'content' : content},status = status.HTTP_200_OK)
 
 class CommitDiffView(APIView):
-    permission_classes = [IsAuthenticated]
+    # Allow public repository access; require repo membership for private repos
 
     def get(self, request, slug):
         base_id = request.query_params.get("base_id")
         head_id = request.query_params.get("head_id")
+        repository = Repository.objects.filter(slug=slug).first()
+        if not repository:
+            return Response({'error': 'Repository not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Enforce membership for private repositories
+        if repository.visibility != Repository.Visibility.PUBLIC:
+            if not IsRepositoryMember().has_object_permission(request, self, repository):
+                return Response({"message": "You are not authorized to view diffs for this repository"}, status=status.HTTP_403_FORBIDDEN)
         if not base_id or not head_id:
             return Response({'error': 'Base and head IDs are required'}, status=status.HTTP_400_BAD_REQUEST)
 

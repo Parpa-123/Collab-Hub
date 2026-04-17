@@ -26,6 +26,21 @@ class CommentPermission(BasePermission):
 
         # Allow create (checked in perform_create)
         if view.action == "create":
+            # If the request contains a target model/object, resolve the repository
+            # and check the user's commenting permission there. Fall back to
+            # authenticated check if repository can't be resolved.
+            model_name = request.data.get('model')
+            object_id = request.data.get('object_id')
+            if model_name and object_id:
+                try:
+                    ct = ContentType.objects.get(model=model_name)
+                    obj = ct.get_object_for_this_type(pk=object_id)
+                    repo = resolve_repository(obj)
+                    if repo:
+                        return can_perform_action(request.user, repo, COMMENT)
+                except Exception:
+                    # Fall back to basic auth check on any error resolving
+                    pass
             return request.user.is_authenticated
 
         return True
@@ -55,7 +70,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated, CommentPermission]
+    permission_classes = [CommentPermission]
 
     def get_queryset(self):
         queryset = super().get_queryset()

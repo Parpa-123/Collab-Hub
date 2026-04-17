@@ -16,11 +16,15 @@ class NotificationViewSet(ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
+        if not request.user.is_authenticated:
+            return Response({'message': 'Unauthorized'}, status=401)
         Notification.objects.filter(recipient=request.user).update(is_read=True)
         return Response({'message': 'All notifications marked as read'})
 
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
+        if not request.user.is_authenticated:
+            return Response({'message': 'Unauthorized'}, status=401)
         notification = self.get_object()
         notification.is_read = True
         notification.save()
@@ -28,5 +32,7 @@ class NotificationViewSet(ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
+        if not request.user.is_authenticated:
+            return Response({'count': 0})
         count = Notification.objects.filter(recipient=request.user, is_read=False).count()
         return Response({'count': count})
