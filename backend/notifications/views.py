@@ -1,11 +1,13 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import Notification
 from .serializers import NotificationSerializer
 
 class NotificationViewSet(ReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
