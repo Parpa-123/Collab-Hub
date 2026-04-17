@@ -1,9 +1,12 @@
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
+import logging
 from .models import Notification
 from PullRequest.models import PullRequest, Review
 from issues.models import Issue
 from repositories.models import RepositoryMember
+
+logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3)
 def notify_pr_created(self, pr_id):
@@ -152,8 +155,11 @@ def notify_generic_comment(self, comment_id):
             recipients.add(creator)
             
         # 2. Assignees (if Issue)
-        if hasattr(content_object, 'assignee') and content_object.assignee:
-             recipients.add(content_object.assignee)
+        issue_assignees = getattr(content_object, 'issue_assignees', None)
+        if issue_assignees is not None:
+            for assignment in issue_assignees.select_related('assignee'):
+                if assignment.assignee:
+                    recipients.add(assignment.assignee)
              
         # 3. People who previously commented on this PullRequest/Issue!
         previous_comments = Comment.objects.filter(
@@ -192,5 +198,6 @@ def notify_generic_comment(self, comment_id):
         if notifications:
             Notification.objects.bulk_create(notifications)
     except Exception as exc:
+        logger.exception("Failed to create comment notifications for comment %s", comment_id)
         self.retry(exc=exc, countdown=5)
         return

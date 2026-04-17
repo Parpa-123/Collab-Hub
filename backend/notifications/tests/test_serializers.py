@@ -9,9 +9,14 @@ User = get_user_model()
 
 class NotificationSerializerTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", email="test@test.com", password="password")
-        self.actor_user = User.objects.create_user(username="actor", first_name="John", last_name="Doe", password="password")
-        self.repo = Repository.objects.create(name="testrepo", owner=self.actor_user)
+        self.user = User.objects.create_user(email="test@test.com", password="password")
+        self.actor_user = User.objects.create_user(
+            email="actor@test.com",
+            first_name="John",
+            last_name="Doe",
+            password="password",
+        )
+        self.repo = Repository.objects.create(name="testrepo", description="test repository", owner=self.actor_user)
         self.content_type = ContentType.objects.get_for_model(self.repo)
         
         self.notification = Notification.objects.create(

@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, type Dispatch, type SetStateAction } from 'react'
-import connect from '../axios/connect';
+import connect, { AUTH_EXPIRED_EVENT } from '../axios/connect';
 
 interface UserContextType {
     login: User | null;
@@ -45,6 +45,17 @@ const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         refreshLogin();
+
+        const handleAuthExpired = () => {
+            setLogin(null);
+            setIsLoading(false);
+        };
+
+        window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+
+        return () => {
+            window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+        };
     }, []);
 
 

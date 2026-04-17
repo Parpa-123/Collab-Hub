@@ -2,6 +2,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
 from .models import Notification
 from .serializers import NotificationSerializer
 
@@ -18,7 +19,10 @@ class NotificationViewSet(ReadOnlyModelViewSet):
     def mark_all_read(self, request):
         if not request.user.is_authenticated:
             return Response({'message': 'Unauthorized'}, status=401)
-        Notification.objects.filter(recipient=request.user).update(is_read=True)
+        Notification.objects.filter(recipient=request.user, is_read=False).update(
+            is_read=True,
+            read_at=timezone.now(),
+        )
         return Response({'message': 'All notifications marked as read'})
 
     @action(detail=True, methods=['post'])
@@ -27,6 +31,7 @@ class NotificationViewSet(ReadOnlyModelViewSet):
             return Response({'message': 'Unauthorized'}, status=401)
         notification = self.get_object()
         notification.is_read = True
+        notification.read_at = timezone.now()
         notification.save()
         return Response({'message': 'Notification marked as read'})
 

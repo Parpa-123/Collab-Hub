@@ -2,6 +2,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from repositories.models import Repository
 from notifications.models import Notification
 
@@ -9,9 +10,9 @@ User = get_user_model()
 
 class NotificationViewTest(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="password")
-        self.actor = User.objects.create_user(username="actor", password="password")
-        self.repo = Repository.objects.create(name="testrepo", owner=self.actor)
+        self.user = User.objects.create_user(email="testuser@test.com", password="password")
+        self.actor = User.objects.create_user(email="actor@test.com", password="password")
+        self.repo = Repository.objects.create(name="testrepo", description="test repository", owner=self.actor)
         self.content_type = ContentType.objects.get_for_model(self.repo)
         
         self.notification = Notification.objects.create(
@@ -44,6 +45,7 @@ class NotificationViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
         self.assertTrue(self.notification.is_read)
+        self.assertIsNotNone(self.notification.read_at)
 
     def test_mark_all_read_action(self):
         self.client.force_authenticate(user=self.user)
@@ -54,6 +56,7 @@ class NotificationViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
         self.assertTrue(self.notification.is_read)
+        self.assertLessEqual(abs((timezone.now() - self.notification.read_at).total_seconds()), 5)
 
     def test_unread_count(self):
         self.client.force_authenticate(user=self.user)

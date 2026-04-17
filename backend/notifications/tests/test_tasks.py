@@ -1,49 +1,77 @@
 from django.test import TestCase
-from unittest.mock import patch, MagicMock
-from notifications.tasks import notify_pr_created
-import collections
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from unittest.mock import patch
 
-class FakeUser:
-    def __init__(self, id, full_name="user"):
-        self.id = id
-        self.full_name = full_name
-    def get_full_name(self):
-        return self.full_name
+from comments.models import Comment
+from issues.models import Issue, IssueAssignee, IssueChoices
+from notifications.models import Notification
+from notifications.tasks import notify_generic_comment, notify_pr_created
+from repositories.models import Repository, RepositoryMember
 
-class FakeMember:
-    def __init__(self, user):
-        self.developer = user
+User = get_user_model()
 
-class FakeRepo:
-    def __init__(self, id):
-        self.id = id
-
-class FakePR:
-    def __init__(self, id, repo, user):
-        self.id = id
-        self.repo = repo
-        self.created_by = user
 
 class NotificationTasksTest(TestCase):
-    @patch('notifications.tasks.PullRequest.objects.select_related')
-    @patch('notifications.tasks.RepositoryMember.objects.select_related')
-    @patch('notifications.tasks.ContentType.objects.get_for_model')
+    def setUp(self):
+        self.actor = User.objects.create_user(email="actor@test.com", password="password")
+        self.recipient = User.objects.create_user(email="recipient@test.com", password="password")
+        self.repo = Repository.objects.create(
+            name="testrepo",
+            description="test repository",
+            owner=self.actor,
+        )
+        RepositoryMember.objects.create(
+            developer=self.recipient,
+            repository=self.repo,
+        )
+
     @patch('notifications.tasks.Notification.objects.bulk_create')
-    def test_notify_pr_created(self, mock_bulk, mock_ct, mock_repo_member, mock_pr):
-        user = FakeUser(1)
-        repo = FakeRepo(2)
-        pr = FakePR(3, repo, user)
-        other_user = FakeUser(4)
-        
-        mock_pr.return_value.get.return_value = pr
-        mock_repo_member.return_value.filter.return_value.exclude.return_value = [FakeMember(other_user)]
-        mock_ct.return_value = MagicMock(id=99)
-        
-        notify_pr_created(3)
-        
-        self.assertTrue(mock_bulk.called)
-        args, kwargs = mock_bulk.call_args
-        notifications_list = args[0]
+    def test_notify_pr_created(self, mock_bulk_create):
+        content_type = ContentType.objects.get_for_model(self.repo)
+
+        class FakePR:
+            id = 3
+            repo = self.repo
+            created_by = self.actor
+
+        with patch('notifications.tasks.PullRequest.objects.select_related') as mock_pr:
+            with patch('notifications.tasks.ContentType.objects.get_for_model', return_value=content_type):
+                mock_pr.return_value.get.return_value = FakePR()
+
+                notify_pr_created.run(3)
+
+        self.assertTrue(mock_bulk_create.called)
+        notifications_list = mock_bulk_create.call_args.args[0]
         self.assertEqual(len(notifications_list), 1)
         self.assertEqual(notifications_list[0].verb, "created a pull request")
-        self.assertEqual(notifications_list[0].recipient, other_user)
+        self.assertEqual(notifications_list[0].recipient, self.recipient)
+
+    def test_notify_generic_comment_notifies_issue_assignees(self):
+        assignee = User.objects.create_user(email="assignee@test.com", password="password")
+        issue = Issue.objects.create(
+            repo=self.repo,
+            title="Broken notifications",
+            description="Investigate missing notifications",
+            status=IssueChoices.OPEN,
+            creator=self.actor,
+        )
+        IssueAssignee.objects.create(issue=issue, assignee=assignee)
+
+        comment = Comment.objects.create(
+            author=self.recipient,
+            content="I am looking into it.",
+            content_type=ContentType.objects.get_for_model(issue),
+            object_id=issue.id,
+        )
+
+        notify_generic_comment.run(comment.id)
+
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=assignee,
+                actor=self.recipient,
+                object_id=issue.id,
+                verb="commented on the Issue",
+            ).exists()
+        )

@@ -1,9 +1,13 @@
 import axios from "axios";
+
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const normalizedApiBaseUrl = rawApiBaseUrl.replace(/\/$/, "");
 const base_url = normalizedApiBaseUrl.endsWith("/api")
     ? normalizedApiBaseUrl
     : `${normalizedApiBaseUrl}/api`;
+
+export const AUTH_EXPIRED_EVENT = "auth:expired";
+
 const connect = axios.create({
     baseURL: base_url,
     headers: {
@@ -13,6 +17,12 @@ const connect = axios.create({
 });
 
 let isRefreshing = false;
+
+const clearStoredAuth = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+};
 
 connect.interceptors.request.use(
     (request) => {
@@ -31,8 +41,7 @@ connect.interceptors.response.use(
     async (error) => {
         const og_config = error.config;
         if (og_config.url?.includes('/accounts/refresh/')) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
+            clearStoredAuth();
             return Promise.reject(error);
         }
         if (error.response?.status === 401 && !og_config._retry && !isRefreshing) {
@@ -50,10 +59,9 @@ connect.interceptors.response.use(
                 localStorage.setItem("accessToken", response.data.access);
                 localStorage.setItem("refreshToken", response.data.refresh);
                 og_config.headers["Authorization"] = `Bearer ${response.data.access}`;
-                return axios(og_config);
+                return connect(og_config);
             } catch (error) {
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
+                clearStoredAuth();
                 return Promise.reject(error);
             } finally {
                 isRefreshing = false;
