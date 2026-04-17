@@ -26,7 +26,7 @@ def store_diff(self, pr_id):
 
     try:
         pr = PullRequest.objects.get(id=pr_id)
-        if not pr.base_commit or not pr.source_branch or not pr.source_branch.head_commit:
+        if not pr.source_branch or not pr.source_branch.head_commit:
             pr.diff_status = "FAILED"
             pr.save()
             return
@@ -34,23 +34,24 @@ def store_diff(self, pr_id):
         pr.diff_status = "PROCESSING"
         pr.save()
 
-        base_tree = getattr(pr.base_commit, 'tree', None)
+        base_tree = getattr(pr.base_commit, 'tree', None) if pr.base_commit else None
         source_tree = getattr(pr.source_branch.head_commit, 'tree', None)
 
-        if not base_tree or not source_tree:
-            pr.diff_status = "FAILED"
-            pr.save()
-            return
+        if base_tree:
+            base_nodes = {
+                node.path: node 
+                for node in TreeNode.objects.filter(tree=base_tree, type="file").select_related('blob')
+            }
+        else:
+            base_nodes = {}
 
-        base_nodes = {
-            node.path: node 
-            for node in TreeNode.objects.filter(tree=base_tree, type="file").select_related('blob')
-        }
-
-        source_nodes = {
-            node.path: node 
-            for node in TreeNode.objects.filter(tree=source_tree, type="file").select_related('blob')
-        }
+        if source_tree:
+            source_nodes = {
+                node.path: node 
+                for node in TreeNode.objects.filter(tree=source_tree, type="file").select_related('blob')
+            }
+        else:
+            source_nodes = {}
 
         all_path = set(base_nodes.keys()) | set(source_nodes.keys())
         diff_response = []

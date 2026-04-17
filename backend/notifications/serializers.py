@@ -2,10 +2,7 @@ from rest_framework import serializers
 from .models import Notification
 
 class NotificationSerializer(serializers.ModelSerializer):
-    actor_name = serializers.CharField(
-        source='actor.get_full_name',
-        read_only=True
-    )
+    actor_name = serializers.SerializerMethodField()
     content_object = serializers.SerializerMethodField()
     
     class Meta:
@@ -21,6 +18,12 @@ class NotificationSerializer(serializers.ModelSerializer):
             'created_at',
             'verb',    
         ]
+
+    def get_actor_name(self, obj):
+        if not obj.actor:
+            return "Unknown User"
+        full_name = obj.actor.get_full_name().strip()
+        return full_name if full_name else obj.actor.email.split('@')[0]
 
     def get_content_object(self, obj):
         if obj.content_object:

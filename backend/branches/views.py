@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from .models import Branches, Commit
 from .serializers import BranchesSerializer, CommitSerializer

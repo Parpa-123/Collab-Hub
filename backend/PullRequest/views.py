@@ -124,8 +124,9 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             if pr.target_branch.is_protected and approvals < 1:
                 return Response({'error': 'Cannot merge: At least one approval is required for protected branches'}, status=status.HTTP_400_BAD_REQUEST)
 
+            base_snapshot = pr.base_commit.snapshot if pr.base_commit else {}
             merged_snapshot = {
-                **pr.base_commit.snapshot,
+                **base_snapshot,
                 **pr.source_branch.head_commit.snapshot
             }
             merge_commit = Commit.objects.create(
