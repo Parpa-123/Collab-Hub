@@ -27,6 +27,10 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    setBranch(defaultBranch);
+  }, [defaultBranch]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));

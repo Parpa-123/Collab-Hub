@@ -21,6 +21,7 @@ interface BranchesCreationProps {
     };
     mode?: 'create' | 'edit';
     trigger?: React.ReactNode;
+    defaultBranch?: string;
 }
 
 const BranchesCreation = ({
@@ -29,7 +30,8 @@ const BranchesCreation = ({
     branchlist,
     initialData,
     mode = 'create',
-    trigger
+    trigger,
+    defaultBranch
 }: BranchesCreationProps) => {
     const formRef = useRef<HTMLFormElement>(null);
     const [open, setOpen] = useState(false);
@@ -110,7 +112,7 @@ const BranchesCreation = ({
                                         <select
                                             name="source"
                                             id="source"
-                                            defaultValue={branchlist[0] || 'main'}
+                                            defaultValue={defaultBranch || branchlist[0] || 'main'}
                                             className="bg-transparent border-none text-sm text-[#1f2328] focus:outline-none cursor-pointer pr-6 appearance-none"
                                         >
                                             {branchlist.length > 0 ? (

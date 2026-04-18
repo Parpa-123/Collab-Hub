@@ -41,6 +41,7 @@ const Branches = () => {
         name: formData.get('name') as string,
         is_protected: formData.get('is_protected') === 'on',
         is_default: formData.get('is_default') === 'on',
+        source: formData.get('source') as string,
       };
 
       await connect.post(`/repositories/${slug}/branches/`, payload);
@@ -93,7 +94,11 @@ const Branches = () => {
           </span>
         </div>
 
-        <BranchesCreation onCreateBranch={handleCreateBranch} branchlist={branches.map((branch) => branch.name)} />
+        <BranchesCreation 
+          onCreateBranch={handleCreateBranch} 
+          branchlist={branches.map((branch) => branch.name)} 
+          defaultBranch={branches.find(b => b.is_default)?.name}
+        />
       </div>
 
       {/* Branch list container */}

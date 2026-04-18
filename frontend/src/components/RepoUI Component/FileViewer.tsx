@@ -123,7 +123,7 @@ const FileViewer = () => {
         <AlertCircle className="w-10 h-10 text-red-400" />
         <p className="text-sm">{error || "File not found."}</p>
         <Link
-          to={`/${slug}`}
+          to={`/${slug}?branch=${branch}`}
           className="text-sm text-blue-600 hover:underline flex items-center gap-1"
         >
           <ArrowLeft size={14} /> Back to code
@@ -137,7 +137,7 @@ const FileViewer = () => {
       {/* ── Breadcrumbs ── */}
       <nav className="flex items-center gap-1 text-sm mb-4 flex-wrap">
         <Link
-          to={`/${slug}`}
+          to={`/${slug}?branch=${branch}`}
           className="text-blue-600 hover:underline font-medium"
         >
           {slug}

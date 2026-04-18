@@ -1,5 +1,5 @@
 import React from 'react'
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import connect from "../../axios/connect";
 import { errorToast } from "../../lib/toast";
 import FileUploadCommit from "./FileUploadCommit";
@@ -17,6 +17,12 @@ export interface RepoHeader {
 const Code = () => {
   const [repoData, setRepoData] = React.useState<RepoHeader | null>(null);
   const { slug } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedBranch = searchParams.get("branch") || repoData?.default_branch || "main";
+
+  const handleBranchChange = (newBranch: string) => {
+    setSearchParams({ branch: newBranch });
+  };
 
   React.useEffect(() => {
     const fetchRepoData = async () => {
@@ -39,9 +45,18 @@ const Code = () => {
         {/* Branch + search + buttons row */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-2">
-            <button className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100">
-              {repoData?.default_branch || "main"}
-            </button>
+            <select 
+              className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100 cursor-pointer outline-none"
+              value={selectedBranch}
+              onChange={(e) => handleBranchChange(e.target.value)}
+            >
+              {repoData?.branch_names?.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+              {!repoData?.branch_names?.includes(selectedBranch) && (
+                 <option value={selectedBranch}>{selectedBranch}</option>
+              )}
+            </select>
             <button className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100">
               {repoData?.branches || 0} Branches
             </button>
@@ -58,7 +73,7 @@ const Code = () => {
             <div className="flex gap-2">
               <FileUploadCommit 
                 slug={slug!} 
-                defaultBranch={repoData?.default_branch} 
+                defaultBranch={selectedBranch} 
                 onSuccess={() => window.location.reload()} 
               />
               <button className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700 font-medium">
@@ -70,7 +85,7 @@ const Code = () => {
 
         {/* File list */}
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-          <FileExplorer slug={slug!} branch={repoData?.default_branch || "main"} />
+          <FileExplorer slug={slug!} branch={selectedBranch} />
         </div>
       </div>
 
