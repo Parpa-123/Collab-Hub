@@ -60,7 +60,7 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="text-foreground">
         <DialogHeader>
           <DialogTitle>Create Issue</DialogTitle>
         </DialogHeader>

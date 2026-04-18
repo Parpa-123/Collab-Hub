@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import connect from "../../axios/connect";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useTheme } from "../../Context/ThemeContext";
 import {
   FileText,
   ChevronRight,
@@ -58,6 +59,7 @@ function langFromPath(path: string): string {
 }
 
 const FileViewer = () => {
+  const { effectiveTheme } = useTheme();
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
 
@@ -109,7 +111,7 @@ const FileViewer = () => {
   /* ── Loading state ── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         <span className="text-sm">Loading file…</span>
       </div>
@@ -119,12 +121,12 @@ const FileViewer = () => {
   /* ── Error state ── */
   if (error || content === null) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500 gap-3">
-        <AlertCircle className="w-10 h-10 text-red-400" />
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <AlertCircle className="w-10 h-10 text-destructive" />
         <p className="text-sm">{error || "File not found."}</p>
         <Link
           to={`/${slug}?branch=${branch}`}
-          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+          className="text-sm text-primary hover:underline flex items-center gap-1"
         >
           <ArrowLeft size={14} /> Back to code
         </Link>
@@ -138,7 +140,7 @@ const FileViewer = () => {
       <nav className="flex items-center gap-1 text-sm mb-4 flex-wrap">
         <Link
           to={`/${slug}?branch=${branch}`}
-          className="text-blue-600 hover:underline font-medium"
+          className="text-primary hover:underline font-medium"
         >
           {slug}
         </Link>
@@ -149,13 +151,13 @@ const FileViewer = () => {
 
           return (
             <span key={partialPath} className="flex items-center gap-1">
-              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
               {isLast ? (
-                <span className="font-semibold text-gray-900">{seg}</span>
+                <span className="font-semibold text-foreground">{seg}</span>
               ) : (
                 <Link
                   to={`/${slug}?path=${encodeURIComponent(partialPath)}&branch=${branch}`}
-                  className="text-blue-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {seg}
                 </Link>
@@ -166,21 +168,21 @@ const FileViewer = () => {
       </nav>
 
       {/* ── File header bar ── */}
-      <div className="border border-gray-200 rounded-t-lg bg-gray-50 px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="border border-border rounded-t-lg bg-muted/50 px-4 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <FileText className="w-4 h-4" />
-          <span className="font-medium text-gray-900">{fileName}</span>
-          <span className="text-gray-400">·</span>
+          <span className="font-medium text-foreground">{fileName}</span>
+          <span className="text-muted-foreground/50">·</span>
           <span>{lineCount} lines</span>
-          <span className="text-gray-400">·</span>
-          <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-xs font-mono">
+          <span className="text-muted-foreground/50">·</span>
+          <span className="bg-muted text-foreground px-1.5 py-0.5 rounded text-xs font-mono">
             {language}
           </span>
         </div>
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-300 rounded px-2.5 py-1.5 hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1.5 hover:bg-accent transition-colors"
           title="Copy file contents"
         >
           {copied ? (
@@ -198,23 +200,25 @@ const FileViewer = () => {
       </div>
 
       {/* ── Syntax-highlighted code ── */}
-      <div className="border border-t-0 border-gray-200 rounded-b-lg overflow-hidden">
+      <div className="border border-t-0 border-border rounded-b-lg overflow-hidden">
         <SyntaxHighlighter
           language={language}
-          style={oneDark}
+          style={effectiveTheme === 'dark' ? oneDark : oneLight}
           showLineNumbers
           wrapLines
           lineNumberStyle={{
             minWidth: "3em",
             paddingRight: "1em",
-            color: "#636c76",
+            color: "var(--muted-foreground)",
             userSelect: "none",
+            opacity: 0.5
           }}
           customStyle={{
             margin: 0,
             borderRadius: 0,
             fontSize: "13px",
             lineHeight: "1.6",
+            background: "transparent"
           }}
         >
           {content}

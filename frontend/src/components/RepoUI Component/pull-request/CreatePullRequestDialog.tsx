@@ -40,7 +40,7 @@ export default function CreatePullRequestDialog({
 }: CreatePullRequestDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg text-foreground">
         <DialogHeader>
           <DialogTitle>Open a pull request</DialogTitle>
           <DialogDescription>Choose branches and describe your changes.</DialogDescription>
@@ -49,7 +49,7 @@ export default function CreatePullRequestDialog({
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 Source branch
               </label>
               <Select
@@ -70,7 +70,7 @@ export default function CreatePullRequestDialog({
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 Target branch
               </label>
               <Select
@@ -92,7 +92,7 @@ export default function CreatePullRequestDialog({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Title</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Title</label>
             <Input
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onFormChange({ title: event.target.value })
@@ -103,11 +103,11 @@ export default function CreatePullRequestDialog({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Description (optional)
             </label>
             <textarea
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border border-border rounded-md px-3 py-2 text-sm outline-none bg-card text-foreground focus:ring-2 focus:ring-primary/50 resize-none"
               onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
                 onFormChange({ description: event.target.value })
               }
@@ -117,14 +117,14 @@ export default function CreatePullRequestDialog({
             />
           </div>
 
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button onClick={() => onOpenChange(false)} variant="outline">
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-600 dark:bg-green-700 hover:opacity-90 text-white"
               disabled={submitting}
               onClick={onCreate}
             >

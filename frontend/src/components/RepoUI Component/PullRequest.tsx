@@ -33,11 +33,11 @@ const INITIAL_FORM: PullRequestFormState = {
 function getStatusBadgeClass(status: PullRequest["status"]) {
   switch (status) {
     case "OPEN":
-      return "bg-green-100 text-green-700";
+      return "bg-green-500/10 text-green-600 dark:text-green-500 border border-green-500/20";
     case "CLOSED":
-      return "bg-red-100 text-red-700";
+      return "bg-destructive/10 text-destructive border border-destructive/20";
     case "MERGED":
-      return "bg-purple-100 text-purple-700";
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-500 border border-purple-500/20";
   }
 }
 
@@ -310,8 +310,8 @@ const PullRequests = () => {
 
   if (!slug) {
     return (
-      <div className="px-6 py-6 bg-[#f6f8fa] min-h-full">
-        <div className="border border-[#d0d7de] rounded-md bg-white px-4 py-6 text-sm text-[#636c76]">
+      <div className="px-6 py-6 bg-muted/30 min-h-full">
+        <div className="border border-border rounded-md bg-card px-4 py-6 text-sm text-muted-foreground">
           Repository slug is missing from the URL.
         </div>
       </div>
@@ -319,12 +319,12 @@ const PullRequests = () => {
   }
 
   return (
-    <div className="px-6 py-6 bg-[#f6f8fa] min-h-full font-sans text-[#1f2328]">
+    <div className="px-6 py-6 bg-muted/30 min-h-full font-sans text-foreground">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <GitPullRequest className="w-5 h-5 text-[#636c76]" />
+          <GitPullRequest className="w-5 h-5 text-muted-foreground" />
           <h2 className="text-base font-semibold">Pull Requests</h2>
-          <span className="bg-[#ddf4ff] text-[#0969da] text-xs font-medium px-2 py-0.5 rounded-full">
+          <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20">
             {statusCounts.OPEN} open
           </span>
         </div>
@@ -339,16 +339,16 @@ const PullRequests = () => {
       </div>
 
       {actionError && (
-        <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
+        <div className="mb-3 px-4 py-2 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-md">
           {actionError}
         </div>
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="flex items-center border border-[#d0d7de] rounded-md bg-white px-3 py-2 flex-1">
-          <Search className="w-4 h-4 text-[#636c76] mr-2" />
+        <div className="flex items-center border border-border rounded-md bg-card px-3 py-2 flex-1 shadow-sm focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+          <Search className="w-4 h-4 text-muted-foreground mr-2" />
           <input
-            className="outline-none text-sm w-full"
+            className="bg-transparent outline-none text-sm w-full placeholder:text-muted-foreground/50"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search pull requests..."
             value={search}
@@ -357,10 +357,10 @@ const PullRequests = () => {
         <div className="flex gap-2">
           {STATUS_FILTERS.map((status) => (
             <button
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-md border transition ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-md border transition-colors ${
                 filter === status
-                  ? "bg-[#0969da] text-white border-[#0969da]"
-                  : "bg-white border-[#d0d7de] text-[#1f2328] hover:bg-[#f6f8fa]"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border text-foreground hover:bg-muted"
               }`}
               key={status}
               onClick={() => setFilter(status)}
@@ -374,12 +374,12 @@ const PullRequests = () => {
         </div>
       </div>
 
-      <div className="border border-[#d0d7de] rounded-md bg-white overflow-hidden shadow-sm">
-        <div className="divide-y divide-[#d0d7de]">
+      <div className="border border-border rounded-md bg-card overflow-hidden shadow-sm">
+        <div className="divide-y divide-border">
           {filteredPullRequests.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <GitPullRequest className="w-10 h-10 text-[#d0d7de] mx-auto mb-3" />
-              <p className="text-sm text-[#636c76]">
+            <div className="px-4 py-10 text-center text-muted-foreground">
+              <GitPullRequest className="w-10 h-10 text-border mx-auto mb-3" />
+              <p className="text-sm">
                 No {filter.toLowerCase()} pull requests found.
               </p>
             </div>

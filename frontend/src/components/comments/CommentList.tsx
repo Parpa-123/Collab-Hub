@@ -47,11 +47,11 @@ const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) 
         <div>
             {/* Section header */}
             <div className="flex items-center gap-2 mb-1">
-                <MessageCircle className="w-4 h-4 text-[#636c76]" />
-                <h3 className="text-sm font-semibold text-[#1f2328]">
+                <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">
                     {path ? `File discussion` : "Discussion"}
                     {!loading && (
-                        <span className="ml-1.5 text-xs font-normal text-gray-400">
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                             ({comments.length})
                         </span>
                     )}
@@ -60,7 +60,7 @@ const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) 
 
             {/* Loading state */}
             {loading && (
-                <div className="flex items-center gap-2 py-8 justify-center text-gray-400">
+                <div className="flex items-center gap-2 py-8 justify-center text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span className="text-sm">Loading comments…</span>
                 </div>
@@ -68,7 +68,7 @@ const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) 
 
             {/* Error state */}
             {!loading && error && (
-                <div className="flex items-center gap-2 py-6 justify-center text-red-500">
+                <div className="flex items-center gap-2 py-6 justify-center text-destructive">
                     <AlertCircle className="w-4 h-4" />
                     <span className="text-sm">{error}</span>
                 </div>
@@ -77,8 +77,8 @@ const CommentList = ({ slug, model, objectId, path, myRole }: CommentListProps) 
             {/* Empty state */}
             {!loading && !error && comments.length === 0 && (
                 <div className="text-center py-8">
-                    <MessageCircle className="w-8 h-8 text-[#d0d7de] mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">
+                    <MessageCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
                         No comments yet. Start the conversation!
                     </p>
                 </div>

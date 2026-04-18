@@ -83,7 +83,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-white hover:bg-gray-100 flex items-center gap-1">
+        <Button variant="outline" size="sm" className="bg-card hover:bg-accent flex items-center gap-1 border-border text-foreground">
           <Plus size={14} /> Upload Files
         </Button>
       </DialogTrigger>
@@ -96,7 +96,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
         </DialogHeader>
 
         {error && (
-          <div className="bg-red-50 text-red-600 text-xs px-3 py-2 border border-red-200 rounded-md">
+          <div className="bg-destructive/10 text-destructive text-xs px-3 py-2 border border-destructive/20 rounded-md">
             {error}
           </div>
         )}
@@ -105,11 +105,11 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
           {/* File input area */}
           <div
             className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer
-              ${files.length > 0 ? "border-[#0969da] bg-[#f1f8ff]" : "border-gray-300 hover:bg-gray-50"}`}
+              ${files.length > 0 ? "border-primary bg-primary/5" : "border-border hover:bg-accent"}`}
             onClick={() => fileInputRef.current?.click()}
           >
-            <UploadCloud className={`w-8 h-8 mb-2 ${files.length > 0 ? "text-[#0969da]" : "text-gray-400"}`} />
-            <span className="text-sm font-medium text-gray-700">
+            <UploadCloud className={`w-8 h-8 mb-2 ${files.length > 0 ? "text-primary" : "text-muted-foreground"}`} />
+            <span className="text-sm font-medium text-foreground">
               {files.length > 0
                 ? `${files.length} file${files.length === 1 ? "" : "s"} selected`
                 : "Choose files to upload"}
@@ -125,11 +125,11 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
 
           {/* List selected files */}
           {files.length > 0 && (
-            <div className="max-h-32 overflow-y-auto space-y-1 bg-white border rounded">
+            <div className="max-h-32 overflow-y-auto space-y-1 bg-muted/50 border border-border rounded">
               {files.map((file, idx) => (
-                <div key={idx} className="flex items-center justify-between px-3 py-1.5 border-b last:border-0 text-sm">
-                  <span className="truncate text-gray-700 font-mono text-xs">{file.name}</span>
-                  <button onClick={() => removeFile(idx)} className="text-gray-400 hover:text-red-500">
+                <div key={idx} className="flex items-center justify-between px-3 py-1.5 border-b border-border last:border-0 text-sm">
+                  <span className="truncate text-foreground font-mono text-xs">{file.name}</span>
+                  <button onClick={() => removeFile(idx)} className="text-muted-foreground hover:text-destructive">
                     <X size={14} />
                   </button>
                 </div>
@@ -139,20 +139,20 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
 
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">Commit Message</label>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Commit Message</label>
               <input
                 type="text"
-                className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#0969da] focus:ring-1 focus:ring-[#0969da]"
+                className="w-full text-sm border border-border rounded px-3 py-1.5 bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={loading}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">Branch</label>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Branch</label>
               <input
                 type="text"
-                className="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#0969da] focus:ring-1 focus:ring-[#0969da] bg-gray-50"
+                className="w-full text-sm border border-border rounded px-3 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-muted text-foreground"
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
                 disabled={loading}
@@ -166,7 +166,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
             Cancel
           </Button>
           <Button
-            className="bg-[#1f883d] hover:bg-[#1a7f37] text-white"
+            className="bg-green-600 dark:bg-green-700 hover:opacity-90 text-white"
             onClick={handleSubmit}
             disabled={loading || files.length === 0}
           >

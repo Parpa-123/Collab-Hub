@@ -56,7 +56,7 @@ export default function EditIssueDialog({
 }: EditIssueDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg text-foreground">
         <DialogHeader>
           <DialogTitle>Edit Issue</DialogTitle>
         </DialogHeader>
@@ -113,7 +113,7 @@ export default function EditIssueDialog({
                 return (
                   <button
                     className={`px-2 py-1 text-xs rounded-full text-white ${
-                      selected ? "ring-2 ring-black" : ""
+                      selected ? "ring-2 ring-ring" : ""
                     }`}
                     key={label.id}
                     onClick={() =>

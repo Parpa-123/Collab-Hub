@@ -13,19 +13,19 @@ export function getGreeting(): string {
 
 export function renderVisibilityIcon(visibility: string) {
   return visibility === "public" ? (
-    <Globe className="w-3.5 h-3.5 text-[#1a7f37]" />
+    <Globe className="w-3.5 h-3.5 text-green-600 dark:text-green-500" />
   ) : (
-    <Lock className="w-3.5 h-3.5 text-[#9a6700]" />
+    <Lock className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-500" />
   );
 }
 
 export function renderNotificationIcon(type: string | undefined) {
   switch (type) {
     case "PullRequest":
-      return <GitPullRequest className="w-4 h-4 text-[#8250df]" />;
+      return <GitPullRequest className="w-4 h-4 text-primary" />;
     case "Issue":
-      return <CircleDot className="w-4 h-4 text-[#1a7f37]" />;
+      return <CircleDot className="w-4 h-4 text-green-600 dark:text-green-500" />;
     default:
-      return <Bell className="w-4 h-4 text-[#0969da]" />;
+      return <Bell className="w-4 h-4 text-primary" />;
   }
 }

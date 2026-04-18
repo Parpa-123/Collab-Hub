@@ -37,7 +37,7 @@ const Code = () => {
   }, [slug]);
 
   return (
-    <div className="px-6 py-4 flex gap-6 bg-white text-gray-900">
+    <div className="px-6 py-4 flex gap-6 bg-background text-foreground">
 
       {/* LEFT SIDE (Files) */}
       <div className="w-3/4">
@@ -46,7 +46,7 @@ const Code = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-2">
             <select 
-              className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100 cursor-pointer outline-none"
+              className="border border-border px-3 py-1 rounded text-sm bg-muted hover:bg-accent cursor-pointer outline-none transition-colors"
               value={selectedBranch}
               onChange={(e) => handleBranchChange(e.target.value)}
             >
@@ -57,10 +57,10 @@ const Code = () => {
                  <option value={selectedBranch}>{selectedBranch}</option>
               )}
             </select>
-            <button className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100">
+            <button className="border border-border px-3 py-1 rounded text-sm bg-card hover:bg-accent transition-colors">
               {repoData?.branches || 0} Branches
             </button>
-            <button className="border border-gray-300 px-3 py-1 rounded text-sm bg-white hover:bg-gray-100">
+            <button className="border border-border px-3 py-1 rounded text-sm bg-card hover:bg-accent transition-colors">
               0 Tags
             </button>
           </div>
@@ -68,7 +68,7 @@ const Code = () => {
           <div className="flex items-center gap-2">
             <input
               placeholder="Go to file"
-              className="bg-white border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="bg-card border border-border rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <div className="flex gap-2">
               <FileUploadCommit 
@@ -76,7 +76,7 @@ const Code = () => {
                 defaultBranch={selectedBranch} 
                 onSuccess={() => window.location.reload()} 
               />
-              <button className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700 font-medium">
+              <button className="bg-green-600 dark:bg-green-700 text-white px-4 py-1 rounded text-sm hover:opacity-90 font-medium transition-opacity">
                 Code ▾
               </button>
             </div>
@@ -84,29 +84,29 @@ const Code = () => {
         </div>
 
         {/* File list */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+        <div className="border border-border rounded-lg overflow-hidden bg-card">
           <FileExplorer slug={slug!} branch={selectedBranch} />
         </div>
       </div>
 
       {/* RIGHT SIDE (About Panel) */}
       <div className="w-1/4">
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h3 className="font-semibold mb-2">About</h3>
-          <p className="text-sm text-gray-700 mb-4">
+        <div className="border border-border rounded-lg p-4 bg-muted/30">
+          <h3 className="font-semibold mb-2 text-foreground">About</h3>
+          <p className="text-sm text-muted-foreground mb-4">
             {repoData?.description}
           </p>
 
-          <div className="text-sm space-y-2 text-gray-800">
+          <div className="text-sm space-y-2 text-muted-foreground">
             <div>README</div>
             <div>0 stars</div>
             <div>0 watching</div>
             <div>0 forks</div>
           </div>
 
-          <div className="mt-4">
-            <h4 className="font-semibold mb-1">Releases</h4>
-            <p className="text-sm text-gray-500">No releases published</p>
+          <div className="mt-4 border-t border-border pt-4">
+            <h4 className="font-semibold mb-1 text-foreground">Releases</h4>
+            <p className="text-sm text-muted-foreground/60">No releases published</p>
           </div>
         </div>
       </div>

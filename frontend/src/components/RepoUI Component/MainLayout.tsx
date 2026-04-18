@@ -129,15 +129,15 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-background min-h-screen text-foreground">
       {/* Repository Header */}
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="px-6 py-4 border-b border-border flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-foreground">
             {repo?.name || "repository"}
           </h1>
           {repo?.description && (
-            <p className="text-sm text-gray-600 mt-1">{repo.description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{repo.description}</p>
           )}
         </div>
 
@@ -145,7 +145,7 @@ const MainLayout = () => {
           {/* Clickable member count */}
           <button
             onClick={() => showMembersModal(true)}
-            className="text-sm text-gray-600 hover:text-blue-600 hover:underline transition-colors"
+            className="text-sm text-muted-foreground hover:text-primary hover:underline transition-colors"
           >
             {members.length} {members.length === 1 ? "member" : "members"}
           </button>
@@ -156,8 +156,8 @@ const MainLayout = () => {
       </div>
 
       {/* Tabs */}
-      <nav className="px-6 border-b border-gray-200">
-        <ul className="flex gap-6 text-sm text-gray-700">
+      <nav className="px-6 border-b border-border">
+        <ul className="flex gap-6 text-sm text-muted-foreground">
           {[
             { to: ".", label: "Code", end: true },
             { to: "branches", label: "Branches" },
@@ -170,8 +170,8 @@ const MainLayout = () => {
               end={tab.end}
               className={({ isActive }) =>
                 `py-3 border-b-2 ${isActive
-                  ? "border-orange-500 text-gray-900"
-                  : "border-transparent hover:text-gray-900"
+                  ? "border-primary text-foreground font-medium"
+                  : "border-transparent hover:text-foreground hover:border-border"
                 }`
               }
             >

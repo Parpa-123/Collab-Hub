@@ -56,11 +56,11 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 export function getStatusMeta(status: PullRequestDetail["status"]) {
   switch (status) {
     case "OPEN":
-      return { color: "bg-green-600 text-white", icon: GitPullRequest, label: "Open" };
+      return { color: "bg-green-600 dark:bg-green-700 text-white", icon: GitPullRequest, label: "Open" };
     case "MERGED":
-      return { color: "bg-purple-600 text-white", icon: GitMerge, label: "Merged" };
+      return { color: "bg-primary text-primary-foreground", icon: GitMerge, label: "Merged" };
     case "CLOSED":
-      return { color: "bg-red-600 text-white", icon: XCircle, label: "Closed" };
+      return { color: "bg-destructive text-destructive-foreground", icon: XCircle, label: "Closed" };
   }
 }
 
@@ -68,14 +68,14 @@ export function getDiffLineClass(line: string) {
   const baseClass = "px-2 py-0.5 whitespace-pre ";
 
   if (line.startsWith("+") && !line.startsWith("+++")) {
-    return `${baseClass}bg-[#e6ffed] text-[#24292e]`;
+    return `${baseClass}bg-green-500/10 text-foreground dark:text-green-400`;
   }
   if (line.startsWith("-") && !line.startsWith("---")) {
-    return `${baseClass}bg-[#ffeef0] text-[#24292e]`;
+    return `${baseClass}bg-destructive/10 text-foreground dark:text-destructive`;
   }
   if (line.startsWith("@@")) {
-    return `${baseClass}bg-[#f1f8ff] text-[#0969da] py-2`;
+    return `${baseClass}bg-primary/10 text-primary py-2`;
   }
 
-  return `${baseClass}text-gray-500`;
+  return `${baseClass}text-muted-foreground`;
 }

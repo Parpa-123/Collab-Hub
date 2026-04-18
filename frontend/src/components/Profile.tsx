@@ -87,15 +87,15 @@ interface RepoIssue extends IssueSummaryItem {
 
 function statusPillClass(status: string) {
   if (status === "OPEN" || status === "open") {
-    return "bg-[#dafbe1] text-[#1a7f37] border border-[#b7f0c0]";
+    return "bg-green-500/10 text-green-600 dark:text-green-500 border border-green-500/20";
   }
   if (status === "CLOSED" || status === "closed") {
-    return "bg-[#fbefff] text-[#8250df] border border-[#e2c5ff]";
+    return "bg-purple-500/10 text-purple-600 dark:text-purple-500 border border-purple-500/20";
   }
   if (status === "MERGED") {
-    return "bg-[#fbefff] text-[#8250df] border border-[#e2c5ff]";
+    return "bg-purple-500/10 text-purple-600 dark:text-purple-500 border border-purple-500/20";
   }
-  return "bg-[#fff8c5] text-[#9a6700] border border-[#eac54f]";
+  return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border border-yellow-500/20";
 }
 
 function prettyRole(role: string | null) {
@@ -300,7 +300,7 @@ const Profile = () => {
 
   if (loadingSummary) {
     return (
-      <div className="min-h-screen bg-[#f6f8fa] text-[#24292f] flex items-center justify-center">
+      <div className="min-h-screen bg-muted/30 text-foreground flex items-center justify-center">
         <div className="inline-flex items-center gap-2 text-sm">
           <Loader2 className="w-4 h-4 animate-spin" />
           Loading profile...
@@ -311,27 +311,27 @@ const Profile = () => {
 
   if (error && !summary) {
     return (
-      <div className="min-h-screen bg-[#f6f8fa] text-[#24292f] flex items-center justify-center">
-        <p className="text-sm text-[#cf222e]">{error}</p>
+      <div className="min-h-screen bg-muted/30 text-foreground flex items-center justify-center">
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa] text-[#24292f]">
+    <div className="min-h-screen bg-muted/30 text-foreground">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
-        <section className="rounded-2xl border border-[#d0d7de] bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-40 h-40 shrink-0 rounded-2xl bg-[#f6f8fa] border border-[#d0d7de] flex items-center justify-center text-5xl font-semibold relative text-[#24292f]">
+            <div className="w-40 h-40 shrink-0 rounded-2xl bg-muted border border-border flex items-center justify-center text-5xl font-semibold relative text-foreground">
               {initials}
-              <span className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-[#1a7f37] border-4 border-white" />
+              <span className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-green-500 border-4 border-card" />
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-4xl font-semibold tracking-tight text-[#24292f]">{displayName}</h1>
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground">{displayName}</h1>
                 <Button
-                  className="bg-white border border-[#d0d7de] text-[#24292f] hover:bg-[#f6f8fa]"
+                  className="bg-card border border-border text-foreground hover:bg-accent"
                   onClick={openEditDialog}
                   variant="outline"
                 >
@@ -340,13 +340,13 @@ const Profile = () => {
                 </Button>
               </div>
 
-              <p className="text-2xl mt-1 text-[#57606a]">@{handle}</p>
+              <p className="text-2xl mt-1 text-muted-foreground">@{handle}</p>
 
-              <p className="mt-4 text-2xl leading-relaxed text-[#24292f]">
+              <p className="mt-4 text-2xl leading-relaxed text-foreground">
                 {profileUser?.bio || "No bio added yet."}
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-5 text-[#57606a] text-sm">
+              <div className="mt-5 flex flex-wrap gap-5 text-muted-foreground text-sm">
                 <span className="inline-flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   {profileUser?.email}
@@ -363,26 +363,26 @@ const Profile = () => {
         </section>
 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-[#d0d7de] bg-white p-5 text-center shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-sm">
             <p className="text-4xl font-semibold">{profileStats?.repositories ?? repos.length}</p>
-            <p className="text-sm text-[#57606a] mt-1">Repositories</p>
+            <p className="text-sm text-muted-foreground mt-1">Repositories</p>
           </div>
-          <div className="rounded-2xl border border-[#d0d7de] bg-white p-5 text-center shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-sm">
             <p className="text-4xl font-semibold">{profileStats?.open_pull_requests ?? 0}</p>
-            <p className="text-sm text-[#57606a] mt-1">Open pull requests</p>
+            <p className="text-sm text-muted-foreground mt-1">Open pull requests</p>
           </div>
-          <div className="rounded-2xl border border-[#d0d7de] bg-white p-5 text-center shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-sm">
             <p className="text-4xl font-semibold">{profileStats?.active_issues ?? 0}</p>
-            <p className="text-sm text-[#57606a] mt-1">Active issues</p>
+            <p className="text-sm text-muted-foreground mt-1">Active issues</p>
           </div>
-          <div className="rounded-2xl border border-[#d0d7de] bg-white p-5 text-center shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-sm">
             <p className="text-4xl font-semibold">{profileStats?.unread_notifications ?? 0}</p>
-            <p className="text-sm text-[#57606a] mt-1">Unread notifications</p>
+            <p className="text-sm text-muted-foreground mt-1">Unread notifications</p>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#d0d7de] bg-white shadow-sm">
-          <nav className="px-4 md:px-6 border-b border-[#d0d7de]">
+        <section className="rounded-2xl border border-border bg-card shadow-sm">
+          <nav className="px-4 md:px-6 border-b border-border">
             <div className="flex flex-wrap gap-5 text-base">
               {[
                 { id: "overview", label: "Overview", icon: BookOpen },
@@ -397,8 +397,8 @@ const Profile = () => {
                   <button
                     className={`inline-flex items-center gap-2 py-4 border-b-2 transition-colors ${
                       active
-                        ? "border-[#0969da] text-[#24292f]"
-                        : "border-transparent text-[#57606a] hover:text-[#24292f]"
+                        ? "border-primary text-foreground font-medium"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
                     }`}
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as ProfileTab)}
@@ -407,7 +407,7 @@ const Profile = () => {
                     <Icon className="w-4 h-4" />
                     {tab.label}
                     {typeof tab.count === "number" && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#eff1f3] text-[#57606a] border border-[#d0d7de]">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                         {tab.count}
                       </span>
                     )}
@@ -427,15 +427,15 @@ const Profile = () => {
 
             {activeTab === "overview" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-5">
+                <div className="rounded-xl border border-border bg-muted/50 p-5">
                   <h3 className="text-lg font-semibold">About</h3>
-                  <p className="mt-2 text-sm text-[#57606a] leading-relaxed">
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                     {profileUser?.bio || "No bio available."}
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-5">
+                <div className="rounded-xl border border-border bg-muted/50 p-5">
                   <h3 className="text-lg font-semibold">Workspace snapshot</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-[#57606a]">
+                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                     <li>Public repositories: {profileStats?.public_repositories ?? 0}</li>
                     <li>Private repositories: {profileStats?.private_repositories ?? 0}</li>
                     <li>Open pull requests: {profileStats?.open_pull_requests ?? 0}</li>
@@ -448,30 +448,30 @@ const Profile = () => {
             {activeTab === "repositories" && (
               <div className="space-y-3">
                 {repos.length === 0 ? (
-                  <p className="text-sm text-[#57606a]">No repositories found.</p>
+                  <p className="text-sm text-muted-foreground">No repositories found.</p>
                 ) : (
                   repos.map((repo) => (
                     <div
-                      className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-4 flex items-start justify-between gap-4"
+                      className="rounded-xl border border-border bg-muted/50 p-4 flex items-start justify-between gap-4"
                       key={repo.slug}
                     >
                       <div className="min-w-0">
                         <Link
-                          className="text-[#58a6ff] hover:underline font-semibold"
+                          className="text-primary hover:underline font-semibold"
                           to={`/${repo.slug}`}
                         >
                           {repo.name}
                         </Link>
                         {repo.description && (
-                          <p className="text-sm text-[#57606a] mt-1 truncate">{repo.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{repo.description}</p>
                         )}
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-xs px-2 py-1 rounded-full bg-white text-[#57606a] border border-[#d0d7de] capitalize">
+                        <p className="text-xs px-2 py-1 rounded-full bg-card text-muted-foreground border border-border capitalize">
                           {repo.visibility}
                         </p>
                         {repo.my_role && (
-                          <p className="text-xs text-[#57606a] mt-2 capitalize">
+                          <p className="text-xs text-muted-foreground mt-2 capitalize">
                             {prettyRole(repo.my_role)}
                           </p>
                         )}
@@ -485,13 +485,13 @@ const Profile = () => {
             {activeTab === "pull_requests" && (
               <div className="space-y-3">
                 {(pullRequests ?? []).length === 0 ? (
-                  <p className="text-sm text-[#57606a]">No pull requests available.</p>
+                  <p className="text-sm text-muted-foreground">No pull requests available.</p>
                 ) : (
                   pullRequests!.map((item) => (
-                    <div className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-4" key={`${item.repo_slug}-${item.id}`}>
+                    <div className="rounded-xl border border-border bg-muted/50 p-4" key={`${item.repo_slug}-${item.id}`}>
                       <div className="flex items-center justify-between gap-3">
                         <Link
-                          className="text-[#0969da] hover:underline font-medium"
+                          className="text-primary hover:underline font-medium"
                           to={`/${item.repo_slug}/pullrequests/${item.id}`}
                         >
                           {item.title}
@@ -500,7 +500,7 @@ const Profile = () => {
                           {item.status}
                         </span>
                       </div>
-                      <p className="text-xs text-[#57606a] mt-2">
+                      <p className="text-xs text-muted-foreground mt-2">
                         {item.repo_name} · {item.source_name} to {item.target_name} ·{" "}
                         {dayjs(item.created_at).fromNow()}
                       </p>
@@ -513,13 +513,13 @@ const Profile = () => {
             {activeTab === "issues" && (
               <div className="space-y-3">
                 {(issues ?? []).length === 0 ? (
-                  <p className="text-sm text-[#57606a]">No issues available.</p>
+                  <p className="text-sm text-muted-foreground">No issues available.</p>
                 ) : (
                   issues!.map((item) => (
-                    <div className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-4" key={`${item.repo_slug}-${item.id}`}>
+                    <div className="rounded-xl border border-border bg-muted/50 p-4" key={`${item.repo_slug}-${item.id}`}>
                       <div className="flex items-center justify-between gap-3">
                         <Link
-                          className="text-[#0969da] hover:underline font-medium"
+                          className="text-primary hover:underline font-medium"
                           to={`/${item.repo_slug}/issues/${item.id}`}
                         >
                           {item.title}
@@ -528,7 +528,7 @@ const Profile = () => {
                           {item.status}
                         </span>
                       </div>
-                      <p className="text-xs text-[#57606a] mt-2">
+                      <p className="text-xs text-muted-foreground mt-2">
                         {item.repo_name} · updated {dayjs(item.updated_at).fromNow()}
                       </p>
                     </div>
@@ -540,24 +540,24 @@ const Profile = () => {
             {activeTab === "activity" && (
               <div className="space-y-3">
                 {(notifications ?? []).length === 0 ? (
-                  <p className="text-sm text-[#57606a]">No activity to show.</p>
+                  <p className="text-sm text-muted-foreground">No activity to show.</p>
                 ) : (
                   notifications!.slice(0, 30).map((notification) => (
                     <div
-                      className="rounded-xl border border-[#d0d7de] bg-[#f6f8fa] p-4 flex items-start justify-between gap-4"
+                      className="rounded-xl border border-border bg-muted/50 p-4 flex items-start justify-between gap-4"
                       key={notification.id}
                     >
                       <div>
-                        <p className="text-sm text-[#24292f]">
+                        <p className="text-sm text-foreground">
                           <span className="font-semibold">{notification.actor_name || "Someone"}</span>{" "}
                           {notification.verb}
                         </p>
                         {notification.content_object?.name && (
-                          <p className="text-xs text-[#57606a] mt-1">{notification.content_object.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{notification.content_object.name}</p>
                         )}
                       </div>
-                      <div className="text-xs text-[#57606a] shrink-0 flex items-center gap-2">
-                        {!notification.is_read && <Bell className="w-3.5 h-3.5 text-[#0969da]" />}
+                      <div className="text-xs text-muted-foreground shrink-0 flex items-center gap-2">
+                        {!notification.is_read && <Bell className="w-3.5 h-3.5 text-primary" />}
                         {dayjs(notification.created_at).fromNow()}
                       </div>
                     </div>

@@ -31,7 +31,7 @@ export default function ActionsSidebar({
 }: ActionsSidebarProps) {
   return (
     <div className="w-full lg:w-72 shrink-0 space-y-4">
-      <div className="border border-[#d0d7de] rounded-md bg-white p-4 shadow-sm">
+      <div className="border border-border rounded-md bg-card p-4 shadow-sm text-foreground">
         <h3 className="font-semibold text-sm mb-3">Review and Actions</h3>
 
         {pr.status === "OPEN" && (
@@ -40,8 +40,8 @@ export default function ActionsSidebar({
               <Button
                 className={`w-full justify-start ${
                   alreadyApproved
-                    ? "bg-green-50 text-green-700 hover:bg-green-50 border-green-200 cursor-default"
-                    : "bg-white text-gray-700 border hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                    ? "bg-green-500/10 text-green-600 dark:text-green-500 hover:bg-green-500/10 border-green-500/20 cursor-default"
+                    : "bg-card text-muted-foreground border-border border hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-500 hover:border-green-500/30"
                 }`}
                 disabled={alreadyApproved || actionLoading === "approve"}
                 onClick={onApprove}
@@ -58,7 +58,7 @@ export default function ActionsSidebar({
 
             <div>
               <Button
-                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
+                className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
                 disabled={!canMerge || actionLoading === "merge"}
                 onClick={onMerge}
               >
@@ -67,21 +67,21 @@ export default function ActionsSidebar({
               </Button>
 
               {pr.has_conflicts && (
-                <p className="text-[11px] text-red-600 mt-1 font-medium px-1">
+                <p className="text-[11px] text-destructive mt-1 font-medium px-1">
                   Resolve conflicts before merging.
                 </p>
               )}
               {!isMaintainer && !pr.has_conflicts && (
-                <p className="text-[11px] text-gray-500 mt-1 px-1">
+                <p className="text-[11px] text-muted-foreground mt-1 px-1">
                   Only maintainers can merge PRs.
                 </p>
               )}
             </div>
 
-            <hr className="border-gray-200 my-2" />
+            <hr className="border-border my-2" />
 
             <Button
-              className="w-full justify-start border-red-200 text-red-600 hover:bg-red-50"
+              className="w-full justify-start border-destructive/20 text-destructive hover:bg-destructive/10"
               disabled={actionLoading === "close"}
               onClick={onClose}
               variant="outline"
@@ -94,7 +94,7 @@ export default function ActionsSidebar({
 
         {pr.status === "CLOSED" && (
           <Button
-            className="w-full justify-start text-blue-600 border-blue-200 hover:bg-blue-50"
+            className="w-full justify-start text-primary border-primary/20 hover:bg-primary/10"
             disabled={actionLoading === "reopen"}
             onClick={onReopen}
             variant="outline"
@@ -105,14 +105,14 @@ export default function ActionsSidebar({
         )}
 
         {pr.status === "MERGED" && (
-          <p className="text-sm text-gray-500 italic mt-2">
+          <p className="text-sm text-muted-foreground italic mt-2">
             This pull request was successfully merged. No further actions can be taken.
           </p>
         )}
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <span>Approvals required:</span>
-          <span className={`font-semibold ${approvedCount >= 1 ? "text-green-600" : "text-gray-900"}`}>
+          <span className={`font-semibold ${approvedCount >= 1 ? "text-green-500" : "text-foreground"}`}>
             {approvedCount} / 1
           </span>
         </div>

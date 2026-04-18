@@ -162,7 +162,7 @@ const IssueDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         <span className="text-sm">Loading issue...</span>
       </div>
@@ -171,11 +171,11 @@ const IssueDetail = () => {
 
   if (error || !issue) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500 gap-3">
-        <AlertCircle className="w-10 h-10 text-red-400" />
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <AlertCircle className="w-10 h-10 text-destructive/50" />
         <p className="text-sm">{error || "Issue not found."}</p>
         <Link
-          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+          className="text-sm text-primary hover:underline flex items-center gap-1"
           to={`/${slug}/issues`}
         >
           <ArrowLeft size={14} /> Back to issues
@@ -188,9 +188,9 @@ const IssueDetail = () => {
   const StatusIcon = status.icon;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 text-foreground">
       <Link
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mb-5"
+        className="inline-flex items-center gap-1 text-sm text-primary hover:underline mb-5"
         to={`/${slug}/issues`}
       >
         <ArrowLeft size={14} /> Back to issues
@@ -198,9 +198,9 @@ const IssueDetail = () => {
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-gray-900 leading-snug">
+          <h1 className="text-2xl font-semibold text-foreground leading-snug">
             {issue.title}
-            <span className="ml-2 text-gray-400 font-normal">#{issue.id}</span>
+            <span className="ml-2 text-muted-foreground font-normal">#{issue.id}</span>
           </h1>
 
           <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ const IssueDetail = () => {
 
             {issue.status !== "closed" && (
               <Button
-                className="flex items-center gap-1.5 shrink-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                className="flex items-center gap-1.5 shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                 disabled={saving}
                 onClick={() => {
                   void handleUpdateStatus("closed");
@@ -232,7 +232,7 @@ const IssueDetail = () => {
 
             {issue.status === "closed" && (
               <Button
-                className="flex items-center gap-1.5 shrink-0 hover:bg-green-50 hover:text-green-600 hover:border-green-200"
+                className="flex items-center gap-1.5 shrink-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 disabled={saving}
                 onClick={() => {
                   void handleUpdateStatus("open");
@@ -255,43 +255,43 @@ const IssueDetail = () => {
             {status.label}
           </span>
 
-          <span className="text-sm text-gray-500">
-            <span className="font-medium text-gray-700">{creatorName(issue.creator)}</span> opened
+          <span className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{creatorName(issue.creator)}</span> opened
             this issue {dayjs(issue.created_at).fromNow()}
           </span>
         </div>
       </div>
 
-      <hr className="border-gray-200 mb-6" />
+      <hr className="border-border mb-6" />
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-8">
         <div>
-          <div className="border border-gray-200 rounded-lg">
-            <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-t-lg border-b border-gray-200">
-              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold uppercase">
+          <div className="border border-border rounded-lg bg-card">
+            <div className="flex items-center gap-2 px-4 py-3 bg-muted rounded-t-lg border-b border-border">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold uppercase">
                 {issue.creator?.first_name?.[0] ?? issue.creator?.email?.[0] ?? "?"}
               </div>
               <div>
-                <span className="text-sm font-semibold text-gray-800">
+                <span className="text-sm font-semibold text-foreground">
                   {creatorName(issue.creator)}
                 </span>
-                <span className="text-xs text-gray-400 ml-2">
+                <span className="text-xs text-muted-foreground ml-2">
                   commented {dayjs(issue.created_at).fromNow()}
                 </span>
               </div>
             </div>
 
-            <div className="px-4 py-5 text-sm text-gray-700 leading-relaxed min-h-[80px]">
+            <div className="px-4 py-5 text-sm text-foreground leading-relaxed min-h-[80px]">
               {issue.description ? (
                 <p className="whitespace-pre-wrap">{issue.description}</p>
               ) : (
-                <p className="text-gray-400 italic">No description provided.</p>
+                <p className="text-muted-foreground italic">No description provided.</p>
               )}
             </div>
           </div>
 
           {issue.updated_at && issue.updated_at !== issue.created_at && (
-            <div className="flex items-center gap-2 mt-5 text-xs text-gray-400">
+            <div className="flex items-center gap-2 mt-5 text-xs text-muted-foreground">
               <Clock size={12} />
               Last updated {dayjs(issue.updated_at).fromNow()}
             </div>
@@ -301,12 +301,12 @@ const IssueDetail = () => {
         <aside className="space-y-5">
           <SidebarSection icon={<User size={14} />} title="Assignees">
             {issue.assignees.length === 0 ? (
-              <p className="text-xs text-gray-400">No one assigned</p>
+              <p className="text-xs text-muted-foreground">No one assigned</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {issue.assignees.map((assignee: { id: number; assignee: number }) => (
                   <span
-                    className="inline-flex items-center gap-1.5 text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-700"
+                    className="inline-flex items-center gap-1.5 text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground"
                     key={assignee.id}
                   >
                     <User size={10} />
@@ -319,7 +319,7 @@ const IssueDetail = () => {
 
           <SidebarSection icon={<Tag size={14} />} title="Labels">
             {issue.labels.length === 0 ? (
-              <p className="text-xs text-gray-400">None yet</p>
+              <p className="text-xs text-muted-foreground">None yet</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {issue.labels.map((label) => (
@@ -336,14 +336,14 @@ const IssueDetail = () => {
           </SidebarSection>
 
           <SidebarSection icon={<Calendar size={14} />} title="Timeline">
-            <ul className="space-y-2 text-xs text-gray-500">
+            <ul className="space-y-2 text-xs text-muted-foreground">
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 Created {dayjs(issue.created_at).format("MMM D, YYYY h:mm A")}
               </li>
               {issue.updated_at && issue.updated_at !== issue.created_at && (
                 <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
                   Updated {dayjs(issue.updated_at).format("MMM D, YYYY h:mm A")}
                 </li>
               )}
@@ -352,7 +352,7 @@ const IssueDetail = () => {
 
           {issue.parent && (
             <SidebarSection icon={<CircleDot size={14} />} title="Parent Issue">
-              <Link className="text-xs text-blue-600 hover:underline" to={`/${slug}/issues/${issue.parent}`}>
+              <Link className="text-xs text-primary hover:underline" to={`/${slug}/issues/${issue.parent}`}>
                 Issue #{issue.parent}
               </Link>
             </SidebarSection>

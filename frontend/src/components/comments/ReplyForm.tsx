@@ -55,13 +55,13 @@ const ReplyForm = ({
     };
 
     return (
-        <div className="mt-2 ml-6 pl-4 border-l-2 border-[#d0d7de]">
-            <div className="border border-[#d0d7de] rounded-lg overflow-hidden bg-white focus-within:border-[#0969da] focus-within:ring-1 focus-within:ring-[#0969da] transition-all">
+        <div className="mt-2 ml-6 pl-4 border-l-2 border-border">
+            <div className="border border-border rounded-lg overflow-hidden bg-card focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
                 <textarea
                     ref={textareaRef}
                     rows={2}
                     placeholder="Write a reply…"
-                    className="w-full px-3 py-2 text-sm outline-none resize-none bg-transparent placeholder:text-gray-400"
+                    className="w-full px-3 py-2 text-sm outline-none resize-none bg-transparent text-foreground placeholder:text-muted-foreground"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     disabled={submitting}
@@ -70,17 +70,17 @@ const ReplyForm = ({
                         if (e.key === "Escape") onCancel();
                     }}
                 />
-                <div className="flex items-center justify-end gap-2 px-3 py-1.5 bg-[#f6f8fa] border-t border-[#d0d7de]">
+                <div className="flex items-center justify-end gap-2 px-3 py-1.5 bg-muted border-t border-border">
                     <button
                         onClick={onCancel}
-                        className="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={submitting || !content.trim()}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1f883d] text-white hover:bg-[#1a7f37] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 dark:bg-green-700 text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                         {submitting ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -91,7 +91,7 @@ const ReplyForm = ({
                     </button>
                 </div>
             </div>
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+            {error && <p className="text-xs text-destructive mt-1">{error}</p>}
         </div>
     );
 };

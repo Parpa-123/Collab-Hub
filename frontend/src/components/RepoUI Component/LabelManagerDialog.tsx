@@ -52,9 +52,9 @@ const LabelManagerDialog: React.FC<LabelManagerDialogProps> = ({
         </DialogHeader>
 
         {/* LABEL LIST */}
-        <div className="space-y-2 max-h-40 overflow-y-auto border p-2 rounded-md">
+        <div className="space-y-2 max-h-40 overflow-y-auto border border-border p-2 rounded-md bg-muted/20">
           {labels.length === 0 && (
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               No labels yet.
             </p>
           )}
@@ -62,21 +62,21 @@ const LabelManagerDialog: React.FC<LabelManagerDialogProps> = ({
           {labels.map((label) => (
             <div
               key={label.id}
-              className="flex justify-between items-center p-2 bg-gray-50 rounded"
+              className="flex justify-between items-center p-2 bg-muted rounded border border-border/50"
             >
               <div className="flex items-center gap-2">
                 <span
-                  className="w-3 h-3 rounded-full"
+                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: `#${label.color}` }}
                 />
-                <span className="text-sm">{label.name}</span>
+                <span className="text-sm text-foreground">{label.name}</span>
               </div>
 
-              <div className="flex gap-1">
-                <button onClick={() => onStartEdit(label)}>
+              <div className="flex gap-2">
+                <button onClick={() => onStartEdit(label)} className="text-muted-foreground hover:text-foreground transition-colors">
                   <Pencil size={12} />
                 </button>
-                <button onClick={() => onDelete(label.id)}>
+                <button onClick={() => onDelete(label.id)} className="text-muted-foreground hover:text-destructive transition-colors">
                   <Trash2 size={12} />
                 </button>
               </div>

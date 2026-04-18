@@ -7,10 +7,18 @@ import NotificationPanel from "../components/Header Components/NotificationPanel
 
 import logo from "../assets/svg-ai-collabhub-2026-01-23.svg"
 import { errorToast, successToast } from "../lib/toast"
+import { useTheme } from "../Context/ThemeContext"
+import { Sun, Moon, Laptop, ChevronDown } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 const Header = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { login, setLogin } = useContext(userContext)
+  const { theme, setTheme, effectiveTheme } = useTheme()
 
   useEffect(() => {
     if (!login) setIsAuthOpen(true)
@@ -113,7 +121,39 @@ const Header = () => {
                 loginWithMicrosoft={loginWithMicrosoft}
               />
             ) : (
+            ) : (
               <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="p-2 rounded-full hover:bg-accent text-muted-foreground flex items-center gap-1 transition-colors">
+                      {theme === 'light' ? <Sun size={18} /> : theme === 'dark' ? <Moon size={18} /> : <Laptop size={18} />}
+                      <ChevronDown size={14} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-32 p-1" align="end">
+                    <div className="flex flex-col gap-1">
+                      <button 
+                        onClick={() => setTheme('light')}
+                        className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm hover:bg-accent ${theme === 'light' ? 'bg-accent' : ''}`}
+                      >
+                        <Sun size={14} /> Light
+                      </button>
+                      <button 
+                        onClick={() => setTheme('dark')}
+                        className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm hover:bg-accent ${theme === 'dark' ? 'bg-accent' : ''}`}
+                      >
+                        <Moon size={14} /> Dark
+                      </button>
+                      <button 
+                        onClick={() => setTheme('system')}
+                        className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm hover:bg-accent ${theme === 'system' ? 'bg-accent' : ''}`}
+                      >
+                        <Laptop size={14} /> System
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
                 <NotificationPanel isLoggedIn={!!login} />
                 <button className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
                   {login.first_name} {login.last_name}

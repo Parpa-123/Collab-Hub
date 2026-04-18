@@ -249,7 +249,7 @@ const PRDetailed = () => {
 
   if (!pr && loading && !error) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         <span className="text-sm">Loading pull request...</span>
       </div>
@@ -258,10 +258,10 @@ const PRDetailed = () => {
 
   if (error && !pr) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500 gap-3">
-        <AlertCircle className="w-10 h-10 text-red-400" />
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <AlertCircle className="w-10 h-10 text-destructive/50" />
         <p className="text-sm">{error}</p>
-        <Link className="text-sm text-blue-600 hover:underline flex items-center gap-1" to={`/${slug}/pullrequests`}>
+        <Link className="text-sm text-primary hover:underline flex items-center gap-1" to={`/${slug}/pullrequests`}>
           <ArrowLeft size={14} /> Back to PRs
         </Link>
       </div>
@@ -280,9 +280,9 @@ const PRDetailed = () => {
   const StatusIcon = statusMeta.icon;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 text-foreground">
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
+        <div className="mb-4 px-4 py-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-md flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -290,31 +290,31 @@ const PRDetailed = () => {
 
       <div className="mb-6">
         <div className="flex items-start justify-between">
-          <h1 className="text-3xl font-normal text-[#1f2328] flex items-center gap-2 leading-tight">
+          <h1 className="text-3xl font-normal text-foreground flex items-center gap-2 leading-tight">
             <span className="font-semibold">{pr.title}</span>
-            <span className="text-gray-400 font-light">#{pr.id}</span>
+            <span className="text-muted-foreground/60 font-light">#{pr.id}</span>
           </h1>
 
           <Link
-            className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 border rounded-md px-3 py-1.5 transition-colors"
+            className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 border border-border rounded-md px-3 py-1.5 transition-colors bg-card"
             to={`/${slug}/pullrequests`}
           >
             <ArrowLeft size={14} /> Back
           </Link>
         </div>
 
-        <div className="flex items-center gap-2 mt-4 text-sm text-gray-500">
+        <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium ${statusMeta.color}`}>
             <StatusIcon className="w-4 h-4" />
             {statusMeta.label}
           </span>
           <span className="ml-1">
-            <span className="font-semibold text-gray-700">Author</span> wants to merge into{" "}
-            <span className="font-mono bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+            <span className="font-semibold text-foreground">Author</span> wants to merge into{" "}
+            <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
               {pr.target_name}
             </span>{" "}
             from{" "}
-            <span className="font-mono bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+            <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
               {pr.source_name}
             </span>{" "}
             - opened {dayjs(pr.created_at).fromNow()}
@@ -322,12 +322,12 @@ const PRDetailed = () => {
         </div>
       </div>
 
-      <div className="border-b border-gray-200 mb-6 flex gap-6">
+      <div className="border-b border-border mb-6 flex gap-6">
         <button
           className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
             activeTab === "overview"
-              ? "border-orange-500 text-[#1f2328]"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
           }`}
           onClick={() => setActiveTab("overview")}
         >
@@ -337,8 +337,8 @@ const PRDetailed = () => {
         <button
           className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
             activeTab === "files"
-              ? "border-orange-500 text-[#1f2328]"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
           }`}
           onClick={() => setActiveTab("files")}
         >
@@ -351,19 +351,19 @@ const PRDetailed = () => {
         <div className="flex-1 min-w-0">
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <div className="border border-[#d0d7de] rounded-md overflow-hidden bg-white">
-                <div className="bg-[#f6f8fa] px-4 py-2 border-b border-[#d0d7de] text-xs font-semibold text-gray-600">
+              <div className="border border-border rounded-md overflow-hidden bg-card shadow-sm">
+                <div className="bg-muted px-4 py-2 border-b border-border text-xs font-semibold text-muted-foreground">
                   Description
                 </div>
-                <div className="p-4 text-sm text-[#1f2328] whitespace-pre-wrap">
+                <div className="p-4 text-sm text-foreground whitespace-pre-wrap">
                   {pr.description || (
-                    <span className="text-gray-400 italic">No description provided.</span>
+                    <span className="text-muted-foreground italic">No description provided.</span>
                   )}
                 </div>
               </div>
 
               <div className="pt-2">
-                <h3 className="text-lg font-semibold border-b pb-2 mb-4">Discussion</h3>
+                <h3 className="text-lg font-semibold border-b border-border pb-2 mb-4">Discussion</h3>
                 <CommentList model="pullrequest" myRole={myRole} objectId={pr.id} slug={slug} />
               </div>
             </div>

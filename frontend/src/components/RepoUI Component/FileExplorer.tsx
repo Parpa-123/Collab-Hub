@@ -82,7 +82,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
 
   if (loading) {
     return (
-      <div className="p-4 text-sm text-gray-500 text-center animate-pulse">
+      <div className="p-4 text-sm text-muted-foreground text-center animate-pulse">
         Loading files...
       </div>
     );
@@ -90,10 +90,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
 
   if (files.length === 0 && !currentPath) {
     return (
-      <div className="p-8 text-center">
-        <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-        <p className="text-sm text-gray-500">No files found for this branch.</p>
-        <p className="text-xs text-gray-400 mt-1">
+      <div className="p-8 text-center text-muted-foreground">
+        <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-sm">No files found for this branch.</p>
+        <p className="text-xs mt-1">
           Upload files to get started.
         </p>
       </div>
@@ -103,10 +103,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
   return (
     <div>
       {/* ── Latest commit info banner ── */}
-      <div className="bg-gray-50 px-4 py-2.5 text-sm border-b border-gray-200 flex items-center justify-between">
-        <span className="text-gray-600 font-mono text-xs">
+      <div className="bg-muted px-4 py-2.5 text-sm border-b border-border flex items-center justify-between">
+        <span className="text-muted-foreground font-mono text-xs">
           {commitId ? commitId.slice(0, 7) : "—"} on{" "}
-          <span className="font-medium text-gray-800">{branch || "main"}</span>
+          <span className="font-medium text-foreground">{branch || "main"}</span>
         </span>
 
         {/* Path breadcrumbs */}
@@ -114,7 +114,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
           <nav className="flex items-center gap-1 text-xs">
             <button
               onClick={() => fetchTree("")}
-              className="text-blue-600 hover:underline font-medium"
+              className="text-primary hover:underline font-medium"
             >
               root
             </button>
@@ -123,13 +123,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
               const partialPath = pathSegments.slice(0, idx + 1).join("/");
               return (
                 <span key={partialPath} className="flex items-center gap-1">
-                  <ChevronRight className="w-3 h-3 text-gray-400" />
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
                   {isLast ? (
-                    <span className="text-gray-800 font-medium">{seg}</span>
+                    <span className="text-foreground font-medium">{seg}</span>
                   ) : (
                     <button
                       onClick={() => fetchTree(partialPath)}
-                      className="text-blue-600 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {seg}
                     </button>
@@ -145,7 +145,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
       {currentPath && (
         <button
           onClick={handleGoUp}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 border-b border-gray-200 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary hover:bg-primary/5 border-b border-border transition-colors"
         >
           <CornerLeftUp className="w-4 h-4" />
           <span>..</span>
@@ -153,30 +153,30 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
       )}
 
       {/* ── File list ── */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-border/30">
         {files.map((file) => (
           <button
             key={file.path}
             onClick={() => handleClick(file)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left group"
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent transition-colors text-left group"
           >
             {file.type === "dir" ? (
-              <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+              <Folder className="w-4 h-4 text-primary shrink-0 transition-colors" />
             ) : (
-              <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+              <FileText className="w-4 h-4 text-muted-foreground/60 shrink-0 group-hover:text-primary transition-colors" />
             )}
             <span
               className={`text-sm ${
                 file.type === "dir"
-                  ? "text-gray-900 font-medium"
-                  : "text-gray-700"
-              } group-hover:text-blue-600 group-hover:underline`}
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground"
+              } group-hover:text-primary group-hover:underline transition-colors`}
             >
               {file.name || file.path}
             </span>
 
             {file.type === "dir" && (
-              <ChevronRight className="w-4 h-4 text-gray-300 ml-auto" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/30 ml-auto group-hover:text-primary" />
             )}
           </button>
         ))}

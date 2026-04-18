@@ -13,17 +13,17 @@ import type { NotificationItem, Repo } from "./dashboard/types";
 function DashboardLoading() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   );
 }
 
 function LoggedOutHero() {
   return (
-    <div className="min-h-[70vh] px-4 flex items-center justify-center bg-[#f6f8fa]">
-      <div className="w-full max-w-2xl rounded-md border border-[#d0d7de] bg-white px-8 py-10 text-center shadow-sm">
-        <h1 className="text-3xl font-semibold text-[#24292f] mb-2">Welcome to CollabHub</h1>
-        <p className="text-sm text-[#57606a]">
+    <div className="min-h-[70vh] px-4 flex items-center justify-center bg-muted">
+      <div className="w-full max-w-2xl rounded-md border border-border bg-card px-8 py-10 text-center shadow-sm">
+        <h1 className="text-3xl font-semibold text-foreground mb-2">Welcome to CollabHub</h1>
+        <p className="text-sm text-muted-foreground">
           Track repositories, pull requests, issues, and discussions in one place.
           Sign in to view your dashboard.
         </p>
@@ -90,22 +90,22 @@ const Dashboard = () => {
   const userName = login.first_name || login.email;
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa]">
+    <div className="min-h-screen bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="mb-6 rounded-md border border-[#d0d7de] bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#57606a]">Home</p>
-          <h1 className="text-[26px] leading-tight font-semibold text-[#24292f] mt-1">
+        <div className="mb-6 rounded-md border border-border bg-card px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Home</p>
+          <h1 className="text-[26px] leading-tight font-semibold text-foreground mt-1">
             {getGreeting()}, {userName}
           </h1>
-          <p className="text-sm text-[#57606a] mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Overview of repositories and recent updates from your workspace.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#ddf4ff] text-[#0969da] border border-[#b6e3ff]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
               <BookOpen className="w-3.5 h-3.5" />
               {repos.length} repositories
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#fff8c5] text-[#9a6700] border border-[#eac54f]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border border-yellow-500/20">
               <Clock3 className="w-3.5 h-3.5" />
               {unreadCount} unread notifications
             </span>

@@ -25,7 +25,7 @@ export default function MergeConfirmationDialog({
 }: MergeConfirmationDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent>
+      <DialogContent className="text-foreground">
         <DialogHeader>
           <DialogTitle>Confirm Merge</DialogTitle>
           <DialogDescription>
@@ -37,7 +37,7 @@ export default function MergeConfirmationDialog({
           <Button onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={onConfirm}>
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onConfirm}>
             Confirm Merge
           </Button>
         </DialogFooter>

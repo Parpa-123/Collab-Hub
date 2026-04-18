@@ -48,19 +48,19 @@ interface CommentItemProps {
 const roleBadge: Record<string, { label: string; cls: string }> = {
     admin: {
         label: "Owner",
-        cls: "bg-purple-100 text-purple-700 border-purple-200",
+        cls: "bg-purple-500/10 text-purple-600 dark:text-purple-500 border-purple-500/20",
     },
     maintainer: {
         label: "Maintainer",
-        cls: "bg-blue-100 text-blue-700 border-blue-200",
+        cls: "bg-blue-500/10 text-blue-600 dark:text-blue-500 border-blue-500/20",
     },
     member: {
         label: "Member",
-        cls: "bg-gray-100 text-gray-600 border-gray-200",
+        cls: "bg-muted text-muted-foreground border-border",
     },
     viewer: {
         label: "Viewer",
-        cls: "bg-gray-50 text-gray-500 border-gray-200",
+        cls: "bg-muted/50 text-muted-foreground border-border",
     },
 };
 
@@ -126,20 +126,20 @@ const CommentItem = ({
         }
     };
 
-    const avatarBg = depth % 2 === 0 ? "bg-blue-100 text-blue-600" : "bg-teal-100 text-teal-600";
+    const avatarBg = depth % 2 === 0 ? "bg-primary/10 text-primary" : "bg-teal-500/10 text-teal-600 dark:text-teal-500";
 
     return (
-        <div className={depth > 0 ? "ml-6 mt-3 pl-4 border-l-2 border-[#d8dee4]" : "mt-4"}>
+        <div className={depth > 0 ? "ml-6 mt-3 pl-4 border-l-2 border-border" : "mt-4"}>
             {/* Comment card */}
-            <div className="border border-[#d0d7de] rounded-lg bg-white overflow-hidden">
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f6f8fa] border-b border-[#d0d7de]">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-muted rounded-t-lg border-b border-border">
                     <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${avatarBg}`}
                     >
                         {authorInitial(comment.author)}
                     </div>
-                    <span className="text-sm font-semibold text-[#1f2328]">
+                    <span className="text-sm font-semibold text-foreground">
                         {authorName(comment.author)}
                     </span>
 
@@ -152,7 +152,7 @@ const CommentItem = ({
                         </span>
                     )}
 
-                    <span className="text-xs text-gray-400 ml-auto">
+                    <span className="text-xs text-muted-foreground ml-auto">
                         {dayjs(comment.created_at).fromNow()}
                         {comment.updated_at !== comment.created_at && (
                             <span className="ml-1 italic">(edited)</span>
@@ -166,7 +166,7 @@ const CommentItem = ({
                         <div>
                             <textarea
                                 rows={3}
-                                className="w-full border border-[#d0d7de] rounded-md px-3 py-2 text-sm outline-none focus:border-[#0969da] focus:ring-1 focus:ring-[#0969da] resize-none transition-all"
+                                className="w-full border border-border rounded-md px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-card text-foreground resize-none transition-all"
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
                                 disabled={saving}
@@ -184,14 +184,14 @@ const CommentItem = ({
                                         setEditing(false);
                                         setEditContent(comment.content);
                                     }}
-                                    className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <X className="w-3 h-3" /> Cancel
                                 </button>
                                 <button
                                     onClick={handleEdit}
                                     disabled={saving || !editContent.trim()}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#1f883d] text-white hover:bg-[#1a7f37] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 dark:bg-green-700 text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                 >
                                     {saving ? (
                                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -203,7 +203,7 @@ const CommentItem = ({
                             </div>
                         </div>
                     ) : (
-                        <p className="text-sm text-[#1f2328] whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                             {comment.content}
                         </p>
                     )}
@@ -211,10 +211,10 @@ const CommentItem = ({
 
                 {/* Action bar */}
                 {!editing && (
-                    <div className="flex items-center gap-3 px-4 py-2 border-t border-[#eaeef2]">
+                    <div className="flex items-center gap-3 px-4 py-2 border-t border-border bg-muted/20">
                         <button
                             onClick={() => setReplying(!replying)}
-                            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#0969da] transition-colors"
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
                         >
                             <MessageSquare className="w-3.5 h-3.5" />
                             Reply
@@ -226,7 +226,7 @@ const CommentItem = ({
                                     setEditContent(comment.content);
                                     setEditing(true);
                                 }}
-                                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#0969da] transition-colors"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
                             >
                                 <Pencil className="w-3.5 h-3.5" />
                                 Edit
@@ -247,7 +247,7 @@ const CommentItem = ({
                                         </button>
                                         <button
                                             onClick={() => setConfirmDelete(false)}
-                                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                                            className="text-muted-foreground hover:text-foreground transition-colors"
                                         >
                                             No
                                         </button>
@@ -255,7 +255,7 @@ const CommentItem = ({
                                 ) : (
                                     <button
                                         onClick={() => setConfirmDelete(true)}
-                                        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+                                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                         Delete

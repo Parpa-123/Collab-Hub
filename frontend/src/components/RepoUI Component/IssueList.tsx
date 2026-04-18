@@ -26,27 +26,27 @@ const IssueList: React.FC<IssueListProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="p-6 text-center text-gray-500">Loading issues...</div>
+            <div className="p-6 text-center text-muted-foreground">Loading issues...</div>
         );
     }
 
     if (issues.length === 0) {
         return (
-            <div className="p-6 text-center text-gray-500">No issues found.</div>
+            <div className="p-6 text-center text-muted-foreground">No issues found.</div>
         );
     }
 
     return (
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-border text-foreground">
             {issues.map((issue) => (
                 <div
                     key={issue.id}
-                    className="flex justify-between items-start p-4 hover:bg-gray-50"
+                    className="flex justify-between items-start p-4 hover:bg-muted/50 transition-colors"
                 >
                     <div>
                         <div className="flex items-center gap-2">
                             <Circle size={14} className="text-green-500 fill-green-500" />
-                            <Link to={`${issue.id}`} className="font-semibold text-gray-900">{issue.title}</Link>
+                            <Link to={`${issue.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{issue.title}</Link>
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
@@ -61,10 +61,10 @@ const IssueList: React.FC<IssueListProps> = ({
                             ))}
                         </div>
 
-                        <div className="text-xs text-gray-500 mt-2">
+                        <div className="text-xs text-muted-foreground mt-2">
                             #{issue.id} opened {new Date(issue.created_at).toLocaleString()}{" "}
                             by{" "}
-                            <span className="font-medium">
+                            <span className="font-medium text-foreground">
                                 {issue.creator
                                     ? issue.creator.first_name || issue.creator.last_name
                                         ? `${issue.creator.first_name} ${issue.creator.last_name}`
@@ -74,7 +74,7 @@ const IssueList: React.FC<IssueListProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-gray-500 text-sm">
+                    <div className="flex items-center gap-4 text-muted-foreground text-sm">
                         <div className="flex items-center gap-1">
                             <MessageSquare size={16} />
                             <span>{issue.assignees?.length || 0}</span>
@@ -82,11 +82,11 @@ const IssueList: React.FC<IssueListProps> = ({
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="p-1 hover:text-red-600 hover:bg-red-50 rounded">
+                                <button className="p-1 hover:text-destructive hover:bg-destructive/10 rounded transition-colors">
                                     <Trash2 size={14} />
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
+                            <DialogContent className="sm:max-w-[425px] text-foreground">
                                 <DialogHeader>
                                     <DialogTitle>Delete Issue</DialogTitle>
                                     <DialogDescription>

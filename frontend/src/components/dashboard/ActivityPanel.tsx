@@ -14,7 +14,7 @@ interface ActivityPanelProps {
 
 function LoadingActivity() {
   return (
-    <div className="px-5 py-12 text-center text-[#57606a]">
+    <div className="px-5 py-12 text-center text-muted-foreground">
       <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
       <p className="text-sm">Loading activity...</p>
     </div>
@@ -24,9 +24,9 @@ function LoadingActivity() {
 function EmptyActivity() {
   return (
     <div className="px-5 py-12 text-center">
-      <Inbox className="w-10 h-10 text-[#8c959f] mx-auto mb-3" />
-      <p className="text-sm text-[#57606a]">No recent activity.</p>
-      <p className="text-xs text-[#6e7781] mt-1">
+      <Inbox className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">No recent activity.</p>
+      <p className="text-xs text-muted-foreground/70 mt-1">
         Activity from your repositories will show up here.
       </p>
     </div>
@@ -40,20 +40,20 @@ export default function ActivityPanel({
 }: ActivityPanelProps) {
   return (
     <main>
-      <div className="bg-white border border-[#d0d7de] rounded-md shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-[#d8dee4] flex items-center justify-between bg-[#f6f8fa]">
-          <h2 className="text-sm font-semibold text-[#24292f] flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#57606a]" />
+      <div className="bg-card border border-border rounded-md shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/50">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Bell className="w-4 h-4 text-muted-foreground" />
             Recent Activity
             {unreadCount > 0 && (
-              <span className="bg-[#ddf4ff] text-[#0969da] text-xs font-semibold px-2 py-0.5 rounded-full border border-[#b6e3ff]">
+              <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 rounded-full border border-primary/20">
                 {unreadCount} new
               </span>
             )}
           </h2>
         </div>
 
-        <div className="divide-y divide-[#d8dee4]">
+        <div className="divide-y divide-border">
           {loading ? (
             <LoadingActivity />
           ) : notifications.length === 0 ? (
@@ -63,8 +63,8 @@ export default function ActivityPanel({
               <div
                 className={`flex items-start gap-3 px-5 py-3.5 transition-colors ${
                   notification.is_read
-                    ? "hover:bg-[#f6f8fa]"
-                    : "bg-[#f6f8fa] hover:bg-[#eef6ff]"
+                    ? "hover:bg-muted/30"
+                    : "bg-muted/50 hover:bg-muted/70"
                 }`}
                 key={notification.id}
               >
@@ -73,26 +73,26 @@ export default function ActivityPanel({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[#24292f]">
-                    <span className="font-semibold text-[#1f2328]">
+                  <p className="text-sm text-foreground/90">
+                    <span className="font-semibold text-foreground">
                       {notification.actor_name || "Someone"}
                     </span>{" "}
                     {notification.verb}
                   </p>
 
                   {notification.content_object && (
-                    <p className="text-xs text-[#57606a] mt-0.5 truncate">
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
                       {notification.content_object.name}
                     </p>
                   )}
 
-                  <p className="text-xs text-[#6e7781] mt-1">
+                  <p className="text-xs text-muted-foreground/60 mt-1">
                     {dayjs(notification.created_at).fromNow()}
                   </p>
                 </div>
 
                 {!notification.is_read && (
-                  <span className="w-2 h-2 rounded-full bg-[#0969da] mt-1.5 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
                 )}
               </div>
             ))

@@ -80,16 +80,16 @@ const Branches = () => {
   };
 
   return (
-    <div className="px-6 py-6 bg-[#f6f8fa] min-h-full font-sans text-[#1f2328]">
+    <div className="px-6 py-6 bg-muted/30 min-h-full font-sans text-foreground">
 
       {/* Top row: Title + Create Branch */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <GitBranch className="w-5 h-5 text-[#636c76]" />
-          <h2 className="text-base font-semibold text-[#1f2328]">
+          <GitBranch className="w-5 h-5 text-muted-foreground" />
+          <h2 className="text-base font-semibold text-foreground">
             Branches
           </h2>
-          <span className="bg-[#ddf4ff] text-[#0969da] text-xs font-medium px-2 py-0.5 rounded-full">
+          <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20">
             {branches.length}
           </span>
         </div>
@@ -102,30 +102,30 @@ const Branches = () => {
       </div>
 
       {/* Branch list container */}
-      <div className="border border-[#d0d7de] rounded-md bg-white overflow-hidden shadow-sm">
-        <div className="divide-y divide-[#d0d7de]">
+      <div className="border border-border rounded-md bg-card overflow-hidden shadow-sm">
+        <div className="divide-y divide-border">
           {branches.map((branch) => (
             <div
               key={branch.id}
-              className="px-4 py-3 flex items-center justify-between hover:bg-[#f6f8fa] transition-colors"
+              className="px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
             >
               {/* Left side: branch name + badges */}
               <div className="flex items-center gap-3">
-                <GitBranch className="w-4 h-4 text-[#636c76]" />
-                <span className="text-sm font-medium text-[#0969da] hover:underline cursor-pointer">
+                <GitBranch className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-primary hover:underline cursor-pointer">
                   {branch.name}
                 </span>
 
                 {/* Show default badge based on is_default field */}
                 {branch.is_default && (
-                  <span className="bg-[#ddf4ff] text-[#0969da] text-xs font-medium px-2 py-0.5 rounded-full border border-[#0969da]/20">
+                  <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20">
                     default
                   </span>
                 )}
 
                 {/* Show protected badge based on is_protected field */}
                 {branch.is_protected && (
-                  <span className="bg-[#fff8c5] text-[#9a6700] text-xs font-medium px-2 py-0.5 rounded-full border border-[#9a6700]/20">
+                  <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-xs font-medium px-2 py-0.5 rounded-full border border-yellow-500/20">
                     protected
                   </span>
                 )}
@@ -133,7 +133,7 @@ const Branches = () => {
 
               {/* Right side: timestamp + delete */}
               <div className="flex items-center gap-4">
-                <span className="text-xs text-[#636c76]">
+                <span className="text-xs text-muted-foreground/70">
                   Updated {dayjs(branch.updated_on).fromNow()}
                 </span>
 
@@ -147,7 +147,7 @@ const Branches = () => {
                       onUpdateBranch={handleUpdateBranch}
                       trigger={
                         <button
-                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-1 text-muted-foreground hover:text-primary hover:bg-accent rounded transition-colors"
                           title="Edit branch"
                         >
                           <Pencil className="w-4 h-4" />
@@ -156,7 +156,7 @@ const Branches = () => {
                     />
                     <button
                       onClick={() => handleDeleteBranch(branch.id, branch.name)}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                       title="Delete branch"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -168,9 +168,9 @@ const Branches = () => {
           ))}
 
           {branches.length === 0 && (
-            <div className="px-4 py-8 text-center">
-              <GitBranch className="w-12 h-12 text-[#d0d7de] mx-auto mb-3" />
-              <p className="text-sm text-[#636c76]">
+            <div className="px-4 py-8 text-center text-muted-foreground">
+              <GitBranch className="w-12 h-12 text-border mx-auto mb-3" />
+              <p className="text-sm">
                 No branches found. Create your first branch to get started.
               </p>
             </div>
@@ -179,7 +179,7 @@ const Branches = () => {
       </div>
 
       {/* Footer text */}
-      <div className="text-center text-xs text-[#636c76] mt-4">
+      <div className="text-center text-xs text-muted-foreground/60 mt-4">
         Showing all {branches.length} {branches.length === 1 ? 'branch' : 'branches'}
       </div>
     </div>

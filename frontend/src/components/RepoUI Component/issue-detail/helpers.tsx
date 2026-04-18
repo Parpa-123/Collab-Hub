@@ -10,20 +10,20 @@ export const statusConfig: Record<
 > = {
   open: {
     label: "Open",
-    color: "text-green-700",
-    bg: "bg-green-100 border-green-300",
+    color: "text-green-600 dark:text-green-500",
+    bg: "bg-green-500/10 border-green-500/20",
     icon: CircleDot,
   },
   in_progress: {
     label: "In Progress",
-    color: "text-yellow-700",
-    bg: "bg-yellow-100 border-yellow-300",
+    color: "text-yellow-600 dark:text-yellow-500",
+    bg: "bg-yellow-500/10 border-yellow-500/20",
     icon: CircleDot,
   },
   closed: {
     label: "Closed",
-    color: "text-purple-700",
-    bg: "bg-purple-100 border-purple-300",
+    color: "text-primary",
+    bg: "bg-primary/10 border-primary/20",
     icon: CircleCheck,
   },
 };

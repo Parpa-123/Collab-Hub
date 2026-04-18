@@ -224,16 +224,16 @@ const Issues = () => {
 
   // ---------------- UI ----------------
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="p-4 max-w-5xl mx-auto text-foreground">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSearchParams({ q: "is:open" })}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-md text-sm font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium transition-colors ${
               currentFilter === "is:open"
-                ? "bg-gray-100 font-semibold"
-                : "hover:bg-gray-50"
+                ? "bg-muted text-foreground font-semibold"
+                : "text-muted-foreground hover:bg-accent"
             }`}
           >
             <Circle size={14} className="text-green-500 fill-green-500" />
@@ -242,10 +242,10 @@ const Issues = () => {
 
           <button
             onClick={() => setSearchParams({ q: "is:closed" })}
-            className={`px-4 py-2 border rounded-md text-sm font-medium text-gray-600 ${
+            className={`px-4 py-2 border border-border rounded-md text-sm font-medium transition-colors ${
               currentFilter === "is:closed"
-                ? "bg-gray-100 font-semibold"
-                : "hover:bg-gray-50"
+                ? "bg-muted text-foreground font-semibold"
+                : "text-muted-foreground hover:bg-accent"
             }`}
           >
             Closed {closedCount}
@@ -285,7 +285,7 @@ const Issues = () => {
       </div>
 
       {/* LIST */}
-      <div className="border rounded-lg">
+      <div className="border border-border rounded-lg bg-card overflow-hidden">
         <IssueList
           issues={filteredIssues}
           loading={loading}

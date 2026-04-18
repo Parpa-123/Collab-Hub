@@ -49,18 +49,18 @@ export default function PullRequestRow({
   const alreadyApproved = reviews.some((review) => review.status === "APPROVED");
 
   return (
-    <div>
-      <div className="px-4 py-3 flex items-center justify-between hover:bg-[#f6f8fa] transition-colors">
+    <div className="text-foreground">
+      <div className="px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
         <div className="flex items-start gap-3 min-w-0">
           <GitPullRequest className="w-4 h-4 mt-0.5 text-green-600 shrink-0" />
           <div className="min-w-0">
             <Link
-              className="text-sm font-medium text-[#0969da] hover:underline truncate"
+              className="text-sm font-medium text-primary hover:underline truncate"
               to={`/${slug}/pullrequests/${pr.id}`}
             >
               {pr.title}
             </Link>
-            <p className="text-xs text-[#636c76] mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               #{pr.id} - {pr.source_name} to {pr.target_name} - opened{" "}
               {dayjs(pr.created_at).fromNow()}
             </p>
@@ -69,10 +69,10 @@ export default function PullRequestRow({
               <div className="flex items-center gap-1 mt-1">
                 <CheckCircle2
                   className={`w-3.5 h-3.5 ${
-                    approvedCount > 0 ? "text-green-600" : "text-gray-400"
+                    approvedCount > 0 ? "text-green-500" : "text-muted-foreground/50"
                   }`}
                 />
-                <span className="text-xs text-[#636c76]">
+                <span className="text-xs text-muted-foreground">
                   {approvedCount} approval{approvedCount !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -89,8 +89,8 @@ export default function PullRequestRow({
                 <button
                   className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition ${
                     alreadyApproved
-                      ? "bg-green-50 text-green-700 border-green-200 cursor-default"
-                      : "bg-white border-[#d0d7de] text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                      ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20 cursor-default"
+                      : "bg-card border-border text-muted-foreground hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/30"
                   }`}
                   disabled={approvingId === pr.id || alreadyApproved}
                   onClick={() => onApprove(pr.id)}
@@ -102,7 +102,7 @@ export default function PullRequestRow({
               )}
 
               <button
-                className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                className="p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-500/10 rounded transition-colors"
                 onClick={() => onAction(pr.id, "merge")}
                 title="Merge"
               >
@@ -110,7 +110,7 @@ export default function PullRequestRow({
               </button>
 
               <button
-                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                 onClick={() => onAction(pr.id, "close")}
                 title="Close"
               >
@@ -121,7 +121,7 @@ export default function PullRequestRow({
 
           {pr.status === "CLOSED" && (
             <button
-              className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+              className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-500/10 rounded transition-colors"
               onClick={() => onAction(pr.id, "reopen")}
               title="Reopen"
             >
@@ -131,9 +131,9 @@ export default function PullRequestRow({
         </div>
       </div>
 
-      <div className="border-t border-[#eaeef2]">
+      <div className="border-t border-border">
         <button
-          className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-500 hover:text-[#0969da] hover:bg-[#f6f8fa] transition-colors"
+          className="w-full flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors"
           onClick={() => onToggleComments(pr.id)}
         >
           <MessageCircle className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ export default function PullRequestRow({
         </button>
 
         {isExpanded && (
-          <div className="px-4 py-4 bg-[#fafbfc] border-t border-[#eaeef2]">
+          <div className="px-4 py-4 bg-muted/10 border-t border-border">
             <CommentList model="pullrequest" myRole={myRole} objectId={pr.id} slug={slug} />
           </div>
         )}
