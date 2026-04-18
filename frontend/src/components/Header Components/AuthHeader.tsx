@@ -90,14 +90,14 @@ const AuthDialog = ({
               name="email"
               placeholder="Email"
               required
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
             />
             <input
               type="password"
               name="password"
               placeholder="Password"
               required
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
             />
 
             <button className="h-10 w-full rounded-md bg-primary text-primary-foreground text-sm font-medium">
@@ -128,14 +128,14 @@ const AuthDialog = ({
                 name="firstName"
                 placeholder="First Name"
                 required
-                className="h-10 w-full rounded-md border px-3 text-sm"
+                className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
               />
               <input
                 type="text"
                 name="lastName"
                 placeholder="Last Name"
                 required
-                className="h-10 w-full rounded-md border px-3 text-sm"
+                className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
               />
             </div>
 
@@ -144,7 +144,7 @@ const AuthDialog = ({
               name="email"
               placeholder="Email"
               required
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
             />
 
             <input
@@ -152,7 +152,7 @@ const AuthDialog = ({
               name="password"
               placeholder="Password"
               required
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
             />
 
             <input
@@ -160,7 +160,7 @@ const AuthDialog = ({
               name="confirmPassword"
               placeholder="Confirm Password"
               required
-              className="h-10 w-full rounded-md border px-3 text-sm"
+              className="h-10 w-full rounded-md border px-3 text-sm bg-background text-foreground"
             />
 
             <button className="h-10 w-full rounded-md bg-primary text-primary-foreground text-sm font-medium">

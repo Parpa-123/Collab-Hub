@@ -419,7 +419,7 @@ const Profile = () => {
 
           <div className="p-4 md:p-6">
             {loadingTabData && (
-              <div className="inline-flex items-center gap-2 text-sm text-[#57606a]">
+              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading data...
               </div>
@@ -577,19 +577,19 @@ const Profile = () => {
 
           <div className="space-y-3 py-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">First name</label>
+              <label className="text-xs font-medium text-muted-foreground">First name</label>
               <Input onChange={(e) => setFirstName(e.target.value)} value={firstName} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Last name</label>
+              <label className="text-xs font-medium text-muted-foreground">Last name</label>
               <Input onChange={(e) => setLastName(e.target.value)} value={lastName} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Email</label>
+              <label className="text-xs font-medium text-muted-foreground">Email</label>
               <Input onChange={(e) => setEmail(e.target.value)} type="email" value={email} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">Bio</label>
+              <label className="text-xs font-medium text-muted-foreground">Bio</label>
               <Textarea onChange={(e) => setBio(e.target.value)} rows={4} value={bio} />
             </div>
           </div>

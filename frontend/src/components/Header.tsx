@@ -18,7 +18,7 @@ import {
 const Header = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { login, setLogin } = useContext(userContext)
-  const { theme, setTheme, effectiveTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     if (!login) setIsAuthOpen(true)
@@ -120,7 +120,6 @@ const Header = () => {
                 loginWithGoogle={loginWithGoogle}
                 loginWithMicrosoft={loginWithMicrosoft}
               />
-            ) : (
             ) : (
               <>
                 <Popover>

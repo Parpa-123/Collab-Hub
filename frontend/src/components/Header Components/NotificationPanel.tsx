@@ -94,7 +94,7 @@ const NotificationPanel = ({ isLoggedIn }: NotificationPanelProps) => {
           <Bell className="h-5 w-5" />
 
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-sm animate-in zoom-in-50 duration-200">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-sm animate-in zoom-in-50 duration-200">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -109,7 +109,7 @@ const NotificationPanel = ({ isLoggedIn }: NotificationPanelProps) => {
             <button
               onClick={markAllRead}
               disabled={markingAll}
-              className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
             >
               {markingAll ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
