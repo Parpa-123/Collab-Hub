@@ -2,6 +2,8 @@
 
 **CollabHub** is a full-stack developer collaboration platform inspired by GitHub, built from the ground up with Django REST Framework and React. It provides a complete suite of tools for repository management, version control, code review, and team collaboration — all deployable on a single virtual machine.
 
+### [▶ Visit the Site](https://collab-hub-1.onrender.com/)
+
 ---
 
 ## Table of Contents
