@@ -8,6 +8,8 @@ import {
   Search,
   Plus,
   Filter,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { userContext } from "../Context/userContext";
 import connect from "../axios/connect";
@@ -16,6 +18,7 @@ import { errorToast } from "../lib/toast";
 import type { Repo } from "./dashboard/types";
 
 type VisibilityFilter = "all" | "public" | "private";
+type ViewMode = "list" | "grid";
 
 function roleBadgeStyle(role: string | null): string {
   if (!role) return "";
@@ -35,6 +38,113 @@ function roleBadgeStyle(role: string | null): string {
   }
 }
 
+/* ── List View Row ── */
+function RepoListItem({ repo }: { repo: Repo }) {
+  return (
+    <Link
+      key={repo.slug}
+      to={`/${repo.slug}`}
+      className="flex items-start gap-4 px-5 py-4 hover:bg-muted/50 transition-colors group"
+    >
+      {/* Visibility icon */}
+      <div className="pt-0.5 shrink-0">
+        {repo.visibility === "public" ? (
+          <Globe className="w-4 h-4 text-green-600 dark:text-green-500" />
+        ) : (
+          <Lock className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
+        )}
+      </div>
+
+      {/* Repo info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-sm font-semibold text-primary group-hover:underline truncate">
+            {repo.name}
+          </h3>
+
+          <span
+            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+              repo.visibility === "public"
+                ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20"
+            }`}
+          >
+            {repo.visibility}
+          </span>
+        </div>
+
+        {repo.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {repo.description}
+          </p>
+        )}
+      </div>
+
+      {/* Role badge */}
+      {repo.my_role && (
+        <div className="shrink-0 pt-0.5">
+          <span
+            className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${roleBadgeStyle(repo.my_role)}`}
+          >
+            {repo.my_role}
+          </span>
+        </div>
+      )}
+    </Link>
+  );
+}
+
+/* ── Grid View Card ── */
+function RepoGridCard({ repo }: { repo: Repo }) {
+  return (
+    <Link
+      to={`/${repo.slug}`}
+      className="flex flex-col bg-card border border-border rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group"
+    >
+      {/* Top row: icon + badges */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-9 h-9 rounded-lg bg-muted/60 border border-border flex items-center justify-center">
+          {repo.visibility === "public" ? (
+            <Globe className="w-4 h-4 text-green-600 dark:text-green-500" />
+          ) : (
+            <Lock className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+              repo.visibility === "public"
+                ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20"
+            }`}
+          >
+            {repo.visibility}
+          </span>
+
+          {repo.my_role && (
+            <span
+              className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${roleBadgeStyle(repo.my_role)}`}
+            >
+              {repo.my_role}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-sm font-semibold text-primary group-hover:underline truncate">
+        {repo.name}
+      </h3>
+
+      {/* Description */}
+      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 flex-1">
+        {repo.description || "No description provided"}
+      </p>
+    </Link>
+  );
+}
+
 export default function Repositories() {
   const { login } = useContext(userContext);
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -42,6 +152,7 @@ export default function Repositories() {
   const [search, setSearch] = useState("");
   const [visibilityFilter, setVisibilityFilter] =
     useState<VisibilityFilter>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useEffect(() => {
     if (!login) return;
@@ -115,7 +226,7 @@ export default function Repositories() {
           </Link>
         </div>
 
-        {/* Search & Filters */}
+        {/* Search, Filters & View Toggle */}
         <div className="bg-card border border-border rounded-lg shadow-sm mb-5">
           <div className="p-4 flex flex-col sm:flex-row gap-3">
             {/* Search */}
@@ -149,19 +260,47 @@ export default function Repositories() {
                 )
               )}
             </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center border border-border rounded-md overflow-hidden shrink-0">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 transition-colors ${
+                  viewMode === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-accent"
+                }`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-accent"
+                }`}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Repository List */}
-        <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
-          {loading ? (
+        {/* Repository Content */}
+        {loading ? (
+          <div className="bg-card border border-border rounded-lg shadow-sm">
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">
                 Loading repositories...
               </span>
             </div>
-          ) : filteredRepos.length === 0 ? (
+          </div>
+        ) : filteredRepos.length === 0 ? (
+          <div className="bg-card border border-border rounded-lg shadow-sm">
             <div className="text-center py-16">
               <BookOpen className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
@@ -178,63 +317,24 @@ export default function Repositories() {
                 </Link>
               )}
             </div>
-          ) : (
+          </div>
+        ) : viewMode === "list" ? (
+          /* ── List View ── */
+          <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
             <div className="divide-y divide-border">
               {filteredRepos.map((repo) => (
-                <Link
-                  key={repo.slug}
-                  to={`/${repo.slug}`}
-                  className="flex items-start gap-4 px-5 py-4 hover:bg-muted/50 transition-colors group"
-                >
-                  {/* Visibility icon */}
-                  <div className="pt-0.5 shrink-0">
-                    {repo.visibility === "public" ? (
-                      <Globe className="w-4 h-4 text-green-600 dark:text-green-500" />
-                    ) : (
-                      <Lock className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-                    )}
-                  </div>
-
-                  {/* Repo info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-semibold text-primary group-hover:underline truncate">
-                        {repo.name}
-                      </h3>
-
-                      <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                          repo.visibility === "public"
-                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
-                            : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20"
-                        }`}
-                      >
-                        {repo.visibility}
-                      </span>
-                    </div>
-
-                    {repo.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {repo.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Role badge */}
-                  {repo.my_role && (
-                    <div className="shrink-0 pt-0.5">
-                      <span
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${roleBadgeStyle(repo.my_role)}`}
-                      >
-                        {repo.my_role}
-                      </span>
-                    </div>
-                  )}
-                </Link>
+                <RepoListItem key={repo.slug} repo={repo} />
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* ── Grid View ── */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRepos.map((repo) => (
+              <RepoGridCard key={repo.slug} repo={repo} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
