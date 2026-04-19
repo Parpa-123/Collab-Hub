@@ -8,17 +8,27 @@ import NotificationPanel from "../components/Header Components/NotificationPanel
 import logo from "../assets/svg-ai-collabhub-2026-01-23.svg"
 import { errorToast, successToast } from "../lib/toast"
 import { useTheme } from "../Context/ThemeContext"
-import { Sun, Moon, Laptop, ChevronDown } from "lucide-react"
+import { Sun, Moon, Laptop, ChevronDown, User, LogOut, BookOpen } from "lucide-react"
+import { Link } from "react-router-dom"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const Header = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { login, setLogin } = useContext(userContext)
   const { theme, setTheme } = useTheme()
+  const [isSignOutOpen, setIsSignOutOpen] = useState(false)
 
   useEffect(() => {
     if (!login) setIsAuthOpen(true)
@@ -104,6 +114,19 @@ const Header = () => {
     window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`
   }
 
+  const handleSignOut = async () => {
+    try {
+      await connect.post("accounts/logout/")
+    } catch {
+      // best-effort — clear client state regardless
+    } finally {
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      setLogin(null)
+      setIsSignOutOpen(false)
+    }
+  }
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
@@ -154,9 +177,70 @@ const Header = () => {
                 </Popover>
 
                 <NotificationPanel isLoggedIn={!!login} />
-                <button className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                  {login.first_name} {login.last_name}
-                </button>
+                
+                {/* User Menu Trigger */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-primary/90 transition-colors">
+                      {login.first_name} {login.last_name}
+                      <ChevronDown size={14} />
+                    </button>
+                  </PopoverTrigger>
+
+                  <PopoverContent className="w-52 p-1" align="end">
+                    {/* User info header */}
+                    <div className="px-3 py-2 border-b border-border mb-1">
+                      <p className="text-sm font-medium text-foreground">{login.first_name} {login.last_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{login.email}</p>
+                    </div>
+
+                    {/* Profile link */}
+                    <Link to="/profile" className="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent transition-colors">
+                      <User size={14} /> Profile
+                    </Link>
+
+                    {/* Repositories link */}
+                    <Link to="/profile" className="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent transition-colors">
+                      <BookOpen size={14} /> Repositories
+                    </Link>
+
+                    <div className="border-t border-border mt-1 pt-1">
+                      {/* Sign out — opens Dialog */}
+                      <button
+                        onClick={() => setIsSignOutOpen(true)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-destructive/10 text-destructive w-full transition-colors"
+                      >
+                        <LogOut size={14} /> Sign out
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Sign out confirmation Dialog */}
+                <Dialog open={isSignOutOpen} onOpenChange={setIsSignOutOpen}>
+                  <DialogContent showCloseButton={false} className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>Sign out?</DialogTitle>
+                      <DialogDescription>
+                        You'll be signed out of your account and returned to the home screen.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                      <button 
+                        onClick={() => setIsSignOutOpen(false)} 
+                        className="px-4 py-2 text-sm font-medium rounded-md hover:bg-accent border border-input transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleSignOut} 
+                        className="px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                      >
+                        Sign out
+                      </button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </>
             )}
           </div>

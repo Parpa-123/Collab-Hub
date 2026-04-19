@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, Plus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Repo } from "./types";
 
@@ -13,39 +13,6 @@ export default function RightSidebar({ repos, unreadCount }: RightSidebarProps) 
 
   return (
     <aside className="space-y-5">
-      <div className="bg-card border border-border rounded-md shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-muted/50">
-          <h2 className="text-sm font-semibold text-foreground">Quick actions</h2>
-        </div>
-
-        <div className="p-4 space-y-2">
-          <Link
-            className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-border hover:bg-muted/50 transition-colors group"
-            to="/new"
-          >
-            <div className="w-8 h-8 rounded-md bg-green-500/10 flex items-center justify-center">
-              <Plus className="w-4 h-4 text-green-600 dark:text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">New repository</p>
-              <p className="text-xs text-muted-foreground/70">Create a new project</p>
-            </div>
-          </Link>
-
-          <Link
-            className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-border hover:bg-muted/50 transition-colors group"
-            to="/profile"
-          >
-            <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Your profile</p>
-              <p className="text-xs text-muted-foreground/70">View your repositories</p>
-            </div>
-          </Link>
-        </div>
-      </div>
 
       <div className="bg-card border border-border rounded-md shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-border bg-muted/50">
