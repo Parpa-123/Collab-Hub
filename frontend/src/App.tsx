@@ -17,6 +17,7 @@ import NotFound from "./404 section/404";
 import PRDetailed from "./components/RepoUI Component/PRDetailed";
 import FileViewer from "./components/RepoUI Component/FileViewer";
 import OAuthCallback from "./components/OAuthCallback";
+import Repositories from "./components/Repositories";
 
 function App() {
 
@@ -30,6 +31,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="auth/callback" element={<OAuthCallback />} />
                 <Route path="profile" element={<ProtectedRouting><Profile /></ProtectedRouting>} />
+                <Route path="repositories" element={<ProtectedRouting><Repositories /></ProtectedRouting>} />
                 <Route path="new" element={<ProtectedRouting><Repo /></ProtectedRouting>} />
                 <Route path=":slug" element={<ProtectedRouting><MainLayout /></ProtectedRouting>}>
                   <Route index element={<ProtectedRouting><Code /></ProtectedRouting>} />
