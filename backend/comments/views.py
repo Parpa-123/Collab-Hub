@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Comment
 from .serializers import CommentSerializer
 from .utils import resolve_repository
+from django.db.models import Prefetch
 
 from config.access.constants import COMMENT
 from config.access.services import can_perform_action
@@ -88,7 +89,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         if path:
             queryset = queryset.filter(path=path)
 
-        return queryset.order_by('-created_at')
+        return queryset.select_related('author').prefetch_related(
+            Prefetch('replies', queryset=Comment.objects.select_related('author')),
+            Prefetch('replies__replies', queryset=Comment.objects.select_related('author')),
+        ).order_by('-created_at')
 
     def perform_create(self, serializer):
         model_name = self.request.data.get('model')

@@ -3,8 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+from django.contrib.contenttypes.prefetch import GenericPrefetch
 from .models import Notification
 from .serializers import NotificationSerializer
+from PullRequest.models import PullRequest
+from issues.models import Issue
 
 class NotificationViewSet(ReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
@@ -13,7 +16,14 @@ class NotificationViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Notification.objects.none()
-        return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')
+        return Notification.objects.filter(
+            recipient=self.request.user
+        ).select_related('actor', 'content_type').prefetch_related(
+            GenericPrefetch('content_object', [
+                PullRequest.objects.all(),
+                Issue.objects.all(),
+            ])
+        ).order_by('-created_at')
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):

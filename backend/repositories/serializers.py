@@ -26,9 +26,7 @@ class RepositoryListSerializer(serializers.ModelSerializer):
         fields = ["name", "description", "visibility", "slug", "my_role"]
 
     def get_my_role(self, obj):
-        user = self.context["request"].user
-        member = RepositoryMember.objects.filter(repository=obj, developer=user).first()
-        return member.role if member else None
+        return getattr(obj, 'my_role', None)
 
 class ViewRepositorySerializer(serializers.ModelSerializer):
     branches = serializers.SerializerMethodField()
@@ -38,7 +36,7 @@ class ViewRepositorySerializer(serializers.ModelSerializer):
         fields = ["name", "description", "visibility", "default_branch", "branches", "branch_names"]
     
     def get_branches(self, obj: Repository) -> int:
-        return obj.branches.count()
+        return len(obj.branches.all())
 
     def get_branch_names(self, obj: Repository) -> list[str]:
         return [branch.name for branch in obj.branches.all()]

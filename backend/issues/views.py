@@ -82,7 +82,9 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
 
 
     def get_queryset(self):
-        return Issue.objects.filter(repo__slug=self.kwargs.get('slug'))
+        return Issue.objects.filter(
+            repo__slug=self.kwargs.get('slug')
+        ).select_related('creator').prefetch_related('labels', 'issue_assignees')
 
     def get_object(self):
         return Issue.objects.get(repo__slug=self.kwargs.get('slug'), pk=self.kwargs.get('pk'))

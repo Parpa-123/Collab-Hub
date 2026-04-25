@@ -11,7 +11,7 @@ from django.db import transaction
 from branches.models import Branches, Commit
 from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Q, Subquery, OuterRef
 from config.access.edge_cases import check_last_owner
 from config.access.constants import LEAVE_REPO, REPO_ADMIN, REPO_MAINTAINER, REPO_VIEWER, REMOVE_USER, UPDATE_ROLE
 from django.shortcuts import get_object_or_404
@@ -38,13 +38,19 @@ class RepositoryViewSet(ModelViewSet):
             Q(owner=user) |
             Q(repositoryMembers__developer=user) |
             Q(visibility=Repository.Visibility.PUBLIC)
-        ).distinct()
+        ).distinct().annotate(
+            my_role=Subquery(
+                RepositoryMember.objects.filter(
+                    repository=OuterRef('pk'), developer=user
+                ).values('role')[:1]
+            )
+        )
 
     
     @action(detail=True, methods=['get'], url_path="members")
     def get_members(self, request, slug=None):
         repository = self.get_object()
-        members = repository.repositoryMembers.all()
+        members = repository.repositoryMembers.select_related('developer').all()
         serializer = RepositoryMemberSerializer(members, many=True)
         return Response(serializer.data)
 
@@ -82,12 +88,18 @@ class RepositoryDetailView(ModelViewSet):
             Q(owner=user) |
             Q(repositoryMembers__developer=user) |
             Q(visibility=Repository.Visibility.PUBLIC)
-        ).distinct()
+        ).distinct().annotate(
+            my_role=Subquery(
+                RepositoryMember.objects.filter(
+                    repository=OuterRef('pk'), developer=user
+                ).values('role')[:1]
+            )
+        ).prefetch_related('branches')
 
     @action(detail=True, methods=['get'], url_path="members")
     def list_members(self, request, slug=None):
         repository = self.get_object()
-        members = RepositoryMember.objects.filter(repository=repository)
+        members = RepositoryMember.objects.filter(repository=repository).select_related('developer')
         serializer = RepositoryMemberSerializer(members, many=True)
         return Response(serializer.data)
 

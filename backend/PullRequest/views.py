@@ -58,7 +58,13 @@ class PullRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
 
     def get_queryset(self):
-        return PullRequest.objects.filter(repo__slug=self.kwargs.get('slug'))
+        return PullRequest.objects.filter(
+            repo__slug=self.kwargs.get('slug')
+        ).select_related(
+            'source_branch', 'target_branch',
+            'source_branch__head_commit', 'target_branch__head_commit',
+            'base_commit', 'created_by', 'merged_by'
+        ).prefetch_related('reviews')
 
     def get_object(self):
         obj = PullRequest.objects.get(

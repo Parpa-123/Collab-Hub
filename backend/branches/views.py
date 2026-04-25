@@ -83,7 +83,7 @@ class CommitViewSet(viewsets.ModelViewSet):
         return Commit.objects.filter(
             repository__slug=self.kwargs['slug'],
             branch__pk=self.kwargs['branch_pk'],
-        )
+        ).select_related('author')
 
     def perform_create(self, serializer):
         repo = Repository.objects.get(slug=self.kwargs['slug'])
@@ -108,4 +108,3 @@ class CommitViewSet(viewsets.ModelViewSet):
 
         from storage.services.tree_service import build_tree_from_snapshot
         build_tree_from_snapshot(commit, commit.snapshot)
-
