@@ -54,4 +54,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, CommonModel):
             models.Index(fields=['email']),
             models.Index(fields=['first_name']),
             models.Index(fields=['last_name']),
+            GinIndex(
+                fields=['email', 'first_name', 'last_name'],
+                name='repo_user_trgm_idx',
+                opclasses=['gin_trgm_ops', 'gin_trgm_ops', 'gin_trgm_ops'],
+            ),
         ]
