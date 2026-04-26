@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
 import connect from "../../axios/connect";
 import { errorToast, successToast } from "../../lib/toast";
 import type { RepoStruct } from "../Profile Components/UserProfile";
-import type { User } from "../../Context/userContext";
 import NotFound from "../../404 section/404";
 import { Button } from "@/components/ui/button";
 import MembersListDialog from "./MembersListDialog";
 import AddMemberDialog from "./AddMemberDialog";
 
-export interface SearchUser extends User {
+export interface SearchUser {
   id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
   bio?: string;
 }
 
@@ -36,6 +38,7 @@ const MainLayout = () => {
   const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("member");
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
@@ -77,18 +80,57 @@ const MainLayout = () => {
     fetchMyRole();
   }, [slug]);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = useCallback(async (query = searchQuery, signal?: AbortSignal) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      setSearchResult([]);
+      setSelectedUser(null);
+      setHasSearched(false);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await connect.get(`/repositories/${slug}/search-users/?search=${searchQuery}`);
+      const res = await connect.get(`/repositories/${slug}/search-users/`, {
+        params: { search: trimmedQuery },
+        signal,
+      });
       setSearchResult(res.data.results ?? res.data);
-    } catch (err) {
+      setHasSearched(true);
+    } catch (err: any) {
+      if (err?.code === "ERR_CANCELED") return;
       errorToast(err, "Failed to search users");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
-  };
+  }, [searchQuery, slug]);
+
+  useEffect(() => {
+    if (!modal) return;
+
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      setSearchResult([]);
+      setSelectedUser(null);
+      setHasSearched(false);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      void handleSearch(trimmedQuery, controller.signal);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [handleSearch, modal, searchQuery, slug]);
 
   const handleAddMember = async () => {
     if (!selectedUser) return;
@@ -202,6 +244,7 @@ const MainLayout = () => {
         onSearchQueryChange={setSearchQuery}
         onSearch={handleSearch}
         loading={loading}
+        hasSearched={hasSearched}
         searchResult={searchResult}
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}

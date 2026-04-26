@@ -2,7 +2,6 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import filters
 from rest_framework import status
 from .models import Repository, RepositoryMember
 from .serializers import RepositoryCreateSerializer, ViewRepositorySerializer, RepositoryListSerializer, AddMemberSerializer, UserSearchSerializer, UpdateMemberRoleSerializer, RepositoryMemberSerializer, FileUploadSerializer
@@ -107,8 +106,6 @@ class RepositoryDetailView(ModelViewSet):
         detail=True, 
         methods=['get'], 
         url_path="search-users",
-        filter_backends=[filters.SearchFilter],
-        search_fields=['^email', '^first_name', '^last_name']
     )
     def search_users(self, request, slug=None):
         repository = self.get_object()
@@ -124,7 +121,14 @@ class RepositoryDetailView(ModelViewSet):
         existing_members = repository.repositoryMembers.values_list("developer", flat=True)
         
         queryset = get_user_model().objects.exclude(id__in=existing_members)
-        users = self.filter_queryset(queryset)
+        for term in search_query.split():
+            queryset = queryset.filter(
+                Q(email__icontains=term)
+                | Q(first_name__icontains=term)
+                | Q(last_name__icontains=term)
+            )
+
+        users = queryset.order_by("first_name", "last_name", "email")[:20]
         
         serializer = UserSearchSerializer(users, many=True)
         return Response(serializer.data)

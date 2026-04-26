@@ -33,6 +33,7 @@ interface AddMemberDialogProps {
   onSearchQueryChange: (query: string) => void;
   onSearch: () => void;
   loading: boolean;
+  hasSearched: boolean;
   searchResult: SearchUser[];
   selectedUser: SearchUser | null;
   onSelectUser: (user: SearchUser) => void;
@@ -48,6 +49,7 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   onSearchQueryChange,
   onSearch,
   loading,
+  hasSearched,
   searchResult,
   selectedUser,
   onSelectUser,
@@ -75,28 +77,35 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
         <ScrollArea className="h-64 border rounded-md p-2">
           {loading ? (
             <p className="text-sm text-gray-500 text-center mt-4">Searching...</p>
+          ) : !hasSearched ? (
+            <p className="text-sm text-gray-500 text-center mt-4">Start typing to search users</p>
           ) : searchResult.length === 0 ? (
             <p className="text-sm text-gray-500 text-center mt-4">No users found</p>
           ) : (
             <div className="space-y-2">
-              {searchResult.map((user) => (
-                <div
-                  key={user.pk}
-                  onClick={() => onSelectUser(user)}
-                  className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${selectedUser?.pk === user.pk ? "bg-gray-100 border" : "hover:bg-gray-50"
-                    }`}
-                >
-                  <Avatar>
-                    <AvatarFallback>
-                      {user.username?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{user.username}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+              {searchResult.map((user) => {
+                const displayName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email;
+                const fallbackInitial = displayName[0]?.toUpperCase() || "U";
+
+                return (
+                  <div
+                    key={user.id}
+                    onClick={() => onSelectUser(user)}
+                    className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${selectedUser?.id === user.id ? "bg-gray-100 border" : "hover:bg-gray-50"
+                      }`}
+                  >
+                    <Avatar>
+                      <AvatarFallback>
+                        {fallbackInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{displayName}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>
