@@ -173,17 +173,17 @@ const MainLayout = () => {
   return (
     <div className="bg-background min-h-screen text-foreground">
       {/* Repository Header */}
-      <div className="px-6 py-4 border-b border-border flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">
+      <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold text-foreground">
             {repo?.name || "repository"}
           </h1>
           {repo?.description && (
-            <p className="text-sm text-muted-foreground mt-1">{repo.description}</p>
+            <p className="mt-1 break-words text-sm text-muted-foreground">{repo.description}</p>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
           {/* Clickable member count */}
           <button
             onClick={() => showMembersModal(true)}
@@ -198,8 +198,8 @@ const MainLayout = () => {
       </div>
 
       {/* Tabs */}
-      <nav className="px-6 border-b border-border">
-        <ul className="flex gap-6 text-sm text-muted-foreground">
+      <nav className="overflow-x-auto border-b border-border px-4 sm:px-6">
+        <ul className="flex min-w-max gap-6 text-sm text-muted-foreground">
           {[
             { to: ".", label: "Code", end: true },
             { to: "branches", label: "Branches" },
