@@ -114,14 +114,15 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
         if IssueAssignee.objects.filter(issue=issue, assignee=user).exists():
             return Response({"error": "User is already assigned to this issue"}, status=400)
             
-        IssueAssignee.objects.create(issue=issue, assignee=user)
+        issue_assignee = IssueAssignee.objects.create(issue=issue, assignee=user)
         
         dispatch_event(
             ISSUE_ASSIGNED,
             {
                 "actor": request.user,
                 "issue": issue,
-                "assignee": user
+                "assignee": user,
+                "issue_assignee_id": issue_assignee.id,
             }
         )
         return Response({"status": "assigned"}, status=200)

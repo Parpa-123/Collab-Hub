@@ -13,7 +13,7 @@ from storage.services.diff_services import generate_diff
 from config.access.services import get_repo_membership, get_repo_role
 from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
 from config.events.dispatcher import dispatch_event
-from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED
+from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED, PR_REOPENED
 from storage.models import TreeNode
 from rest_framework.permissions import IsAuthenticated
 
@@ -188,8 +188,13 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         
         pr.save()
 
-        from .tasks import trigger_diff_generation
-        trigger_diff_generation(pr.id)
+        dispatch_event(
+            PR_REOPENED,
+            {
+                "actor": request.user,
+                "pr": pr,
+            }
+        )
 
         return Response({'status': 'reopened'}, status=status.HTTP_200_OK)
 
@@ -241,6 +246,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
 
+    def _dispatch_review_event(self, actor, review):
+        event_type = PR_COMMENTED if review.status == "COMMENTED" else PR_REVIEWED
+        dispatch_event(
+            event_type,
+            {
+                "actor": actor,
+                "review": review,
+            },
+        )
+
     def get_queryset(self):
         return Review.objects.filter(
             pr__repo__slug=self.kwargs.get('slug'),
@@ -269,10 +284,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         review.status = 'APPROVED'
         review.save()
-        dispatch_event(PR_REVIEWED, {
-            "actor": request.user,
-            "review": review
-        })
+        self._dispatch_review_event(request.user, review)
         return Response({'status': 'approved'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -288,10 +300,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         review.status = 'CHANGES_REQUESTED'
         review.save()
-        dispatch_event(PR_REVIEWED, {
-            "actor": request.user,
-            "review": review
-        })
+        self._dispatch_review_event(request.user, review)
         return Response({'status': 'changes requested'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
@@ -302,10 +311,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         
         review.status = 'COMMENTED'
         review.save()
-        dispatch_event(PR_COMMENTED, {
-            "actor": request.user,
-            "review": review
-        })
+        self._dispatch_review_event(request.user, review)
         return Response({'status': 'commented'}, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
@@ -335,3 +341,4 @@ class ReviewViewSet(viewsets.ModelViewSet):
         review_instance = serializer.save(reviewer=reviewer, pr=pull_request)
         review_instance.commit = current_commit_id
         review_instance.save()
+        self._dispatch_review_event(reviewer, review_instance)

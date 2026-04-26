@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.db import IntegrityError
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from repositories.models import Repository
@@ -24,3 +25,23 @@ class NotificationModelTest(TestCase):
         self.assertEqual(str(notification), f"{self.actor} created a new repository {self.repo}")
         self.assertFalse(notification.is_read)
         self.assertIsNone(notification.read_at)
+
+    def test_dedupe_key_is_unique(self):
+        Notification.objects.create(
+            recipient=self.user,
+            actor=self.actor,
+            content_type=self.content_type,
+            object_id=self.repo.id,
+            verb="created a new repository",
+            dedupe_key="dedupe-key-1",
+        )
+
+        with self.assertRaises(IntegrityError):
+            Notification.objects.create(
+                recipient=self.user,
+                actor=self.actor,
+                content_type=self.content_type,
+                object_id=self.repo.id,
+                verb="created a new repository",
+                dedupe_key="dedupe-key-1",
+            )

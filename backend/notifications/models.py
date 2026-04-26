@@ -15,6 +15,7 @@ class Notification(CommonModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+    dedupe_key = models.CharField(max_length=255, null=True, blank=True, unique=True)
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
     verb = models.CharField(max_length=255)

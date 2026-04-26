@@ -5,8 +5,14 @@ from .models import Notification
 from PullRequest.models import PullRequest, Review
 from issues.models import Issue
 from repositories.models import RepositoryMember
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
+
+
+def _dedupe_key(event, *parts):
+    return ":".join([event, *(str(part) for part in parts)])
 
 @shared_task(bind=True, max_retries=3)
 def notify_pr_created(self, pr_id):
@@ -24,12 +30,13 @@ def notify_pr_created(self, pr_id):
                     content_type=content_type,
                     object_id=pr.id,
                     verb="created a pull request",
+                    dedupe_key=_dedupe_key("pr_created", pr.id, member.developer_id),
                 )
             )
-        Notification.objects.bulk_create(notifications)
+        Notification.objects.bulk_create(notifications, ignore_conflicts=True)
     
-    except PullRequest.DoesNotExist:
-        self.retry(exc=PullRequest.DoesNotExist, countdown=5)
+    except PullRequest.DoesNotExist as exc:
+        self.retry(exc=exc, countdown=5)
         return
 
 @shared_task(bind=True, max_retries=3)
@@ -54,11 +61,12 @@ def notify_pr_commented(self, review_id):
                     content_type=content_type,
                     object_id=pr.id,
                     verb=verb,
+                    dedupe_key=_dedupe_key("pr_commented", review.id, user.id),
                 )
             )
-        Notification.objects.bulk_create(notifications)
-    except Review.DoesNotExist:
-        self.retry(exc=Review.DoesNotExist, countdown=5)
+        Notification.objects.bulk_create(notifications, ignore_conflicts=True)
+    except Review.DoesNotExist as exc:
+        self.retry(exc=exc, countdown=5)
         return
 
 @shared_task(bind=True, max_retries=3)
@@ -83,11 +91,12 @@ def notify_pr_reviewed(self, review_id):
                     content_type=content_type,
                     object_id=pr.id,
                     verb=verb,
+                    dedupe_key=_dedupe_key("pr_reviewed", review.id, review.status, user.id),
                 )
             )
-        Notification.objects.bulk_create(notifications)
-    except Review.DoesNotExist:
-        self.retry(exc=Review.DoesNotExist, countdown=5)
+        Notification.objects.bulk_create(notifications, ignore_conflicts=True)
+    except Review.DoesNotExist as exc:
+        self.retry(exc=exc, countdown=5)
         return
 
 @shared_task(bind=True, max_retries=3)
@@ -103,33 +112,65 @@ def notify_issue_created(self, issue_id):
                 content_type=content_type,
                 object_id=issue.id,
                 verb="opened an issue",
+                dedupe_key=_dedupe_key("issue_created", issue.id, member.developer_id),
             )
             for member in members
         ]
-        Notification.objects.bulk_create(notifications)
-    except Issue.DoesNotExist:
-        self.retry(exc=Issue.DoesNotExist, countdown=5)
+        Notification.objects.bulk_create(notifications, ignore_conflicts=True)
+    except Issue.DoesNotExist as exc:
+        self.retry(exc=exc, countdown=5)
         return
 
 @shared_task(bind=True, max_retries=3)
-def notify_issue_assigned(self, issue_id, assignee_id, actor_id):
+def notify_issue_assigned(self, issue_id, assignee_id, actor_id, issue_assignee_id=None):
     try:
         issue = Issue.objects.get(id=issue_id)
-        from django.contrib.auth import get_user_model
-        user_model = get_user_model()
-        assignee = user_model.objects.get(id=assignee_id)
-        actor = user_model.objects.get(id=actor_id)
+        assignee = User.objects.get(id=assignee_id)
+        actor = User.objects.get(id=actor_id)
         content_type = ContentType.objects.get_for_model(issue)
         
         if assignee != actor:
-            Notification.objects.create(
-                recipient=assignee,
-                actor=actor,
-                content_type=content_type,
-                object_id=issue.id,
-                verb="assigned you to an issue",
+            dedupe_key = _dedupe_key(
+                "issue_assigned",
+                issue_assignee_id if issue_assignee_id is not None else f"{issue.id}-{assignee.id}-{actor.id}",
+                assignee.id,
+            )
+            Notification.objects.get_or_create(
+                dedupe_key=dedupe_key,
+                defaults={
+                    "recipient": assignee,
+                    "actor": actor,
+                    "content_type": content_type,
+                    "object_id": issue.id,
+                    "verb": "assigned you to an issue",
+                },
             )
     except (Issue.DoesNotExist, Exception) as exc:
+        self.retry(exc=exc, countdown=5)
+        return
+
+
+@shared_task(bind=True, max_retries=3)
+def notify_pr_reopened(self, pr_id):
+    try:
+        pr = PullRequest.objects.select_related('repo', 'created_by').get(id=pr_id)
+        members = RepositoryMember.objects.select_related("developer").filter(repository=pr.repo).exclude(developer=pr.created_by)
+        content_type = ContentType.objects.get_for_model(pr)
+        notifications = []
+        for member in members:
+            notifications.append(
+                Notification(
+                    recipient=member.developer,
+                    actor=pr.created_by,
+                    content_type=content_type,
+                    object_id=pr.id,
+                    verb="reopened a pull request",
+                    dedupe_key=_dedupe_key("pr_reopened", pr.id, member.developer_id),
+                )
+            )
+        Notification.objects.bulk_create(notifications, ignore_conflicts=True)
+
+    except PullRequest.DoesNotExist as exc:
         self.retry(exc=exc, countdown=5)
         return
 
@@ -193,10 +234,11 @@ def notify_generic_comment(self, comment_id):
                     content_type=comment.content_type,
                     object_id=comment.object_id,
                     verb=verb,
+                    dedupe_key=_dedupe_key("comment_created", comment.id, user.id),
                 )
             )
         if notifications:
-            Notification.objects.bulk_create(notifications)
+            Notification.objects.bulk_create(notifications, ignore_conflicts=True)
     except Exception as exc:
         logger.exception("Failed to create comment notifications for comment %s", comment_id)
         self.retry(exc=exc, countdown=5)

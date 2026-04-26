@@ -3,6 +3,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django.urls import reverse
 from repositories.models import Repository
 from notifications.models import Notification
 
@@ -22,13 +23,11 @@ class NotificationViewTest(APITestCase):
             object_id=self.repo.id,
             verb="pinged you"
         )
-        self.url = "/api/notifications/" 
+        self.list_url = reverse("notification-list")
 
     def test_list_notifications(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.get(self.url)
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            self.skipTest("URL route for notifications not easily resolving")
+        response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
@@ -38,9 +37,8 @@ class NotificationViewTest(APITestCase):
 
     def test_mark_read_action(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.post(f"{self.url}{self.notification.id}/mark_read/")
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            self.skipTest("URL route for notifications not easily resolving")
+        url = reverse("notification-mark-read", kwargs={"pk": self.notification.id})
+        response = self.client.post(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
@@ -49,9 +47,8 @@ class NotificationViewTest(APITestCase):
 
     def test_mark_all_read_action(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.post(f"{self.url}mark_all_read/")
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            self.skipTest("URL route for notifications not easily resolving")
+        url = reverse("notification-mark-all-read")
+        response = self.client.post(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.notification.refresh_from_db()
@@ -60,8 +57,7 @@ class NotificationViewTest(APITestCase):
 
     def test_unread_count(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.get(f"{self.url}unread_count/")
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            self.skipTest("URL route for notifications not easily resolving")
+        url = reverse("notification-unread-count")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)
