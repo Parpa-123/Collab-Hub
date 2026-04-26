@@ -1,3 +1,11 @@
+export interface PullRequestUser {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
+
 export interface PullRequestDetail {
   id: number;
   title: string;
@@ -6,6 +14,8 @@ export interface PullRequestDetail {
   source_name: string;
   target_name: string;
   created_by: number;
+  created_by_detail?: PullRequestUser | null;
+  merged_by_detail?: PullRequestUser | null;
   created_at: string;
   merged_at: string | null;
   closed_at: string | null;

@@ -278,6 +278,11 @@ const PRDetailed = () => {
 
   const statusMeta = getStatusMeta(pr.status);
   const StatusIcon = statusMeta.icon;
+  const authorName =
+    pr.created_by_detail?.full_name ||
+    `${pr.created_by_detail?.first_name ?? ""} ${pr.created_by_detail?.last_name ?? ""}`.trim() ||
+    pr.created_by_detail?.email ||
+    `User #${pr.created_by}`;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 text-foreground">
@@ -309,7 +314,7 @@ const PRDetailed = () => {
             {statusMeta.label}
           </span>
           <span className="ml-1">
-            <span className="font-semibold text-foreground">Author</span> wants to merge into{" "}
+            <span className="font-semibold text-foreground">{authorName}</span> wants to merge into{" "}
             <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
               {pr.target_name}
             </span>{" "}
