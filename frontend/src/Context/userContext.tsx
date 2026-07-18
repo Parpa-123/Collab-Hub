@@ -20,6 +20,7 @@ export interface User {
 
 const userContext = createContext<UserContextType>({ login: null, setLogin: () => { }, refreshUser: () => Promise.resolve(), isLoading: true });
 
+
 const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
 
     const [login, setLogin] = React.useState<User | null>(null);
@@ -28,6 +29,13 @@ const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
     const refreshLogin = async () => {
         setIsLoading(true);
         try {
+            // Check if token exists before making the network call
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                setLogin(null);
+                return;
+            }
+
             const res = await connect.get('accounts/me/', {
                 withCredentials: true
             });

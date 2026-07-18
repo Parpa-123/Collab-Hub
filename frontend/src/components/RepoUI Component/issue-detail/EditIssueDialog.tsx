@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { Label } from "../Issues";
 
 type IssueStatus = "open" | "in_progress" | "closed";
@@ -73,10 +73,10 @@ export default function EditIssueDialog({
 
           <div className="space-y-1">
             <label className="text-sm font-medium">Description</label>
-            <Textarea
-              onChange={(event) => setEditDescription(event.target.value)}
+            <MarkdownEditor
+              onChange={setEditDescription}
               placeholder="Describe the issue..."
-              rows={4}
+              rows={6}
               value={editDescription}
             />
           </div>

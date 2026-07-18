@@ -27,9 +27,16 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     def get_content_object(self, obj):
         if obj.content_object:
+            repo_slug = None
+            if hasattr(obj.content_object, 'repo') and obj.content_object.repo:
+                repo_slug = obj.content_object.repo.slug
+            elif hasattr(obj.content_object, 'repository') and obj.content_object.repository:
+                repo_slug = obj.content_object.repository.slug
+
             return {
                 "id": getattr(obj.content_object, "id", None),
                 "type": obj.content_object.__class__.__name__,
-                "name": str(obj.content_object)
+                "name": str(obj.content_object),
+                "repo_slug": repo_slug,
             }
         return None

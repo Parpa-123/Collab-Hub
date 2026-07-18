@@ -6,14 +6,19 @@ from django.utils import timezone
 from repositories.permissions import IsMaintainer, IsRepositoryAdmin, IsRepositoryMember
 from repositories.models import Repository
 from branches.models import Branches, Commit
-from .models import PullRequest, Review
-from .serializers import PullRequestSerializer, ReviewSerializer
+from .models import PullRequest, PullRequestViewedFile, Review
+from .serializers import (
+    PullRequestSerializer,
+    PullRequestViewedFileSerializer,
+    PullRequestViewedFileUpdateSerializer,
+    ReviewSerializer,
+)
 from django.db import transaction
 from storage.services.diff_services import generate_diff
 from config.access.services import get_repo_membership, get_repo_role
 from config.access.constants import REPO_ADMIN, REPO_MAINTAINER, REPO_MEMBER
 from config.events.dispatcher import dispatch_event
-from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED, PR_REOPENED
+from config.events.event_types import PR_CREATED, PR_COMMENTED, PR_REVIEWED, PR_REOPENED, PR_MERGED, PR_CLOSED
 from storage.models import TreeNode
 from rest_framework.permissions import IsAuthenticated
 
@@ -44,6 +49,11 @@ class PullRequestHardenedPermission(permissions.BasePermission):
             if view.action == 'merge' and obj.target_branch.is_protected:
                 return role == REPO_ADMIN
             return True
+
+        if view.action in ['ready_for_review', 'convert_to_draft']:
+            if obj.created_by == request.user:
+                return True
+            return role in [REPO_ADMIN, REPO_MAINTAINER]
 
         if view.action in ['close', 'reopen']:
             if obj.created_by == request.user:
@@ -104,6 +114,8 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         
             if pr.status != "OPEN":
                 return Response({'error': f'Cannot merge a {pr.status.lower()} pull request'}, status=status.HTTP_400_BAD_REQUEST)
+            if pr.is_draft:
+                return Response({'error': 'Cannot merge a draft pull request. Mark it ready for review first.'}, status=status.HTTP_400_BAD_REQUEST)
 
             if pr.source_branch_deleted or pr.target_branch_deleted:
                 return Response({'error': 'Source or target branch has been deleted'}, status=status.HTTP_400_BAD_REQUEST)
@@ -155,7 +167,40 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             pr.merged_at = timezone.now()
             pr.merged_by = request.user
             pr.save()
+
+            dispatch_event(
+                PR_MERGED,
+                {
+                    "actor": request.user,
+                    "pr": pr,
+                }
+            )
+
             return Response({'status': 'merged'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def ready_for_review(self, request, **kwargs):
+        pr = self.get_object()
+        if pr.status != "OPEN":
+            return Response({'error': f'Cannot mark a {pr.status.lower()} pull request as ready for review'}, status=status.HTTP_400_BAD_REQUEST)
+        if not pr.is_draft:
+            return Response({'status': 'already_ready_for_review'}, status=status.HTTP_200_OK)
+
+        pr.is_draft = False
+        pr.save(update_fields=["is_draft", "updated_at"])
+        return Response({'status': 'ready_for_review'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def convert_to_draft(self, request, **kwargs):
+        pr = self.get_object()
+        if pr.status != "OPEN":
+            return Response({'error': f'Cannot convert a {pr.status.lower()} pull request to draft'}, status=status.HTTP_400_BAD_REQUEST)
+        if pr.is_draft:
+            return Response({'status': 'already_draft'}, status=status.HTTP_200_OK)
+
+        pr.is_draft = True
+        pr.save(update_fields=["is_draft", "updated_at"])
+        return Response({'status': 'converted_to_draft'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def close(self, request, **kwargs):
@@ -168,12 +213,20 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         pr.status = 'CLOSED'
         pr.closed_at = timezone.now()
         pr.save()
+
+        dispatch_event(
+            PR_CLOSED,
+            {
+                "actor": request.user,
+                "pr": pr,
+            }
+        )
+
         return Response({'status': 'closed'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def reopen(self, request, **kwargs):
         pr = self.get_object()
-        if pr.status == "OPEN":
             return Response({'error': 'Pull request is already open'}, status=status.HTTP_400_BAD_REQUEST)
         if pr.status == "MERGED":
             return Response({'error': 'Cannot reopen a merged pull request'}, status=status.HTTP_400_BAD_REQUEST)
@@ -240,6 +293,30 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             "page_size": page_size,
             "results": paginated_response
         }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get', 'patch'])
+    def viewed_files(self, request, **kwargs):
+        pr = self.get_object()
+
+        if request.method.lower() == "get":
+            viewed_files = PullRequestViewedFile.objects.filter(
+                pr=pr,
+                user=request.user,
+            ).order_by("file_path")
+            serializer = PullRequestViewedFileSerializer(viewed_files, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        update_serializer = PullRequestViewedFileUpdateSerializer(data=request.data)
+        update_serializer.is_valid(raise_exception=True)
+
+        viewed_file, _ = PullRequestViewedFile.objects.update_or_create(
+            pr=pr,
+            user=request.user,
+            file_path=update_serializer.validated_data["file_path"],
+            defaults={"viewed": update_serializer.validated_data["viewed"]},
+        )
+        serializer = PullRequestViewedFileSerializer(viewed_file)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

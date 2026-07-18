@@ -9,8 +9,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import {
   Select,
   SelectContent,
@@ -71,10 +71,11 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
           onChange={(e) => onTitleChange(e.target.value)}
         />
 
-        <Textarea
-          placeholder="Description"
+        <MarkdownEditor
+          onChange={onDescriptionChange}
+          placeholder="Describe the issue..."
+          rows={6}
           value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
         />
 
         <Select

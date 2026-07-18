@@ -21,6 +21,8 @@ interface FileExplorerProps {
   branch?: string;
 }
 
+const directoryCache = new Map<string, TreeResponse>();
+
 const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
   const navigate = useNavigate();
 
@@ -30,6 +32,16 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
   const [currentPath, setCurrentPath] = useState<string>("");
 
   const fetchTree = async (path: string = "") => {
+    const cacheKey = `${slug}:${branch || "main"}:${path}`;
+    if (directoryCache.has(cacheKey)) {
+      const cached = directoryCache.get(cacheKey)!;
+      setFiles(cached.files);
+      setCommitId(cached.commit_id || null);
+      setCurrentPath(path);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await connect.get<TreeResponse>(
@@ -44,6 +56,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ slug, branch }) => {
       setFiles(sorted);
       setCommitId(res.data.commit_id || null);
       setCurrentPath(path);
+      directoryCache.set(cacheKey, { ...res.data, files: sorted });
     } catch (error) {
       errorToast(error, "Failed to load directory");
       setFiles([]);

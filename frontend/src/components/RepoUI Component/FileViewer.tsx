@@ -199,30 +199,44 @@ const FileViewer = () => {
         </button>
       </div>
 
-      {/* ── Syntax-highlighted code ── */}
+      {/* ── File Content Rendering ── */}
       <div className="border border-t-0 border-border rounded-b-lg overflow-hidden">
-        <SyntaxHighlighter
-          language={language}
-          style={effectiveTheme === 'dark' ? oneDark : oneLight}
-          showLineNumbers
-          wrapLines
-          lineNumberStyle={{
-            minWidth: "3em",
-            paddingRight: "1em",
-            color: "var(--muted-foreground)",
-            userSelect: "none",
-            opacity: 0.5
-          }}
-          customStyle={{
-            margin: 0,
-            borderRadius: 0,
-            fontSize: "13px",
-            lineHeight: "1.6",
-            background: "transparent"
-          }}
-        >
-          {content}
-        </SyntaxHighlighter>
+        {content?.startsWith('data:image/') ? (
+          <div className="flex items-center justify-center p-8 bg-muted/20 min-h-[300px]">
+            <img src={content} alt={fileName} className="max-w-full max-h-[70vh] object-contain rounded border border-border shadow-sm" />
+          </div>
+        ) : content?.startsWith('data:') ? (
+          <div className="flex flex-col items-center justify-center p-12 bg-muted/20 gap-4 text-muted-foreground min-h-[300px]">
+            <FileText className="w-12 h-12 opacity-50" />
+            <p className="text-sm font-medium">This is a binary file and cannot be displayed inline.</p>
+            <a href={content} download={fileName} className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
+              Download File
+            </a>
+          </div>
+        ) : (
+          <SyntaxHighlighter
+            language={language}
+            style={effectiveTheme === 'dark' ? oneDark : oneLight}
+            showLineNumbers
+            wrapLines
+            lineNumberStyle={{
+              minWidth: "3em",
+              paddingRight: "1em",
+              color: "var(--muted-foreground)",
+              userSelect: "none",
+              opacity: 0.5
+            }}
+            customStyle={{
+              margin: 0,
+              borderRadius: 0,
+              fontSize: "13px",
+              lineHeight: "1.6",
+              background: "transparent"
+            }}
+          >
+            {content}
+          </SyntaxHighlighter>
+        )}
       </div>
     </div>
   );

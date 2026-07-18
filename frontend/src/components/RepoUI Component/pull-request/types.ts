@@ -15,6 +15,7 @@ export interface PullRequest {
   id: number;
   title: string;
   status: "OPEN" | "CLOSED" | "MERGED";
+  is_draft: boolean;
   source_name: string;
   target_name: string;
   created_by: number;
@@ -35,6 +36,12 @@ export interface PullRequestFormState {
   description: string;
   source_branch: string;
   target_branch: string;
+  is_draft: boolean;
 }
 
-export type PullRequestAction = "merge" | "close" | "reopen";
+export type PullRequestAction =
+  | "merge"
+  | "close"
+  | "reopen"
+  | "ready-for-review"
+  | "convert-to-draft";

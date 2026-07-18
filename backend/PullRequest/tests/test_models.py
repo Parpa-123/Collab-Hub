@@ -183,7 +183,7 @@ class PullRequestConstraintTest(TestCase):
         )
         Review.objects.create(
             pr=self.pr, reviewer=reviewer,
-            status="APPROVED", comment="LGTM",
+            status="APPROVED"
         )
         self.assertTrue(self.pr.is_mergeable)
 
@@ -208,11 +208,11 @@ class PullRequestConstraintTest(TestCase):
         )
         Review.objects.create(
             pr=self.pr, reviewer=rev1,
-            status="APPROVED", comment="Good",
+            status="APPROVED"
         )
         Review.objects.create(
             pr=self.pr, reviewer=rev2,
-            status="CHANGES_REQUESTED", comment="Fix this",
+            status="CHANGES_REQUESTED"
         )
         self.assertFalse(self.pr.is_mergeable)
 
@@ -279,7 +279,7 @@ class ReviewConstraintTest(TestCase):
         )
         self.review = Review.objects.create(
             pr=self.pr, reviewer=self.reviewer_user,
-            status="APPROVED", comment="LGTM",
+            status="APPROVED"
         )
 
     # ── unique_together (pr, reviewer) ────────────────────────────────
@@ -288,7 +288,7 @@ class ReviewConstraintTest(TestCase):
         with self.assertRaises(IntegrityError):
             Review.objects.create(
                 pr=self.pr, reviewer=self.reviewer_user,
-                status="COMMENTED", comment="Duplicate attempt",
+                status="COMMENTED"
             )
 
     def test_same_reviewer_different_pr_allowed(self):
@@ -303,7 +303,7 @@ class ReviewConstraintTest(TestCase):
         )
         review2 = Review.objects.create(
             pr=pr2, reviewer=self.reviewer_user,
-            status="APPROVED", comment="Looks good",
+            status="APPROVED"
         )
         self.assertEqual(review2.reviewer, self.reviewer_user)
 
@@ -315,24 +315,6 @@ class ReviewConstraintTest(TestCase):
         self.assertIn("CHANGES_REQUESTED", values)
         self.assertIn("COMMENTED", values)
 
-    # ── comment blank allowed ──────────────────────────────────────────
-
-    def test_comment_blank_allowed(self):
-        """Review comment can be an empty string."""
-        hotfix = Branches.objects.create(
-            name="hotfix2", repository=self.repo, created_by=self.author,
-        )
-        pr2 = PullRequest.objects.create(
-            repo=self.repo, source_branch=hotfix,
-            target_branch=self.target, title="H2",
-            description="H", status="OPEN",
-            created_by=self.author,
-        )
-        review = Review.objects.create(
-            pr=pr2, reviewer=self.reviewer_user,
-            status="APPROVED", comment="",
-        )
-        self.assertEqual(review.comment, "")
 
     # ── __str__ ────────────────────────────────────────────────────────
 

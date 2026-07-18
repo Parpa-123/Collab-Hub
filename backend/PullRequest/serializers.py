@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import PullRequest, Review
+from .models import PullRequest, PullRequestViewedFile, Review
 
 class PullRequestSerializer(serializers.ModelSerializer):
     has_conflicts = serializers.ReadOnlyField()
@@ -49,3 +49,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         if attrs.get('status') not in ["APPROVED", "CHANGES_REQUESTED", "COMMENTED"]:
             raise serializers.ValidationError("Invalid status.")
         return attrs
+
+
+class PullRequestViewedFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PullRequestViewedFile
+        fields = ("id", "file_path", "viewed", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class PullRequestViewedFileUpdateSerializer(serializers.Serializer):
+    file_path = serializers.CharField(max_length=1024)
+    viewed = serializers.BooleanField()

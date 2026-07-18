@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import {
   Select,
   SelectContent,
@@ -106,16 +107,23 @@ export default function CreatePullRequestDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Description (optional)
             </label>
-            <textarea
-              className="w-full border border-border rounded-md px-3 py-2 text-sm outline-none bg-card text-foreground focus:ring-2 focus:ring-primary/50 resize-none"
-              onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                onFormChange({ description: event.target.value })
-              }
+            <MarkdownEditor
+              onChange={(value) => onFormChange({ description: value })}
               placeholder="Describe your changes..."
-              rows={3}
+              rows={6}
               value={form.description}
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input
+              checked={form.is_draft}
+              className="h-4 w-4 rounded border-border"
+              onChange={(event) => onFormChange({ is_draft: event.target.checked })}
+              type="checkbox"
+            />
+            Create as draft
+          </label>
 
           {formError && <p className="text-sm text-destructive">{formError}</p>}
 

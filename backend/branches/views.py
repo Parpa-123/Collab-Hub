@@ -106,5 +106,5 @@ class CommitViewSet(viewsets.ModelViewSet):
             branch=branch,
         )
 
-        from storage.services.tree_service import build_tree_from_snapshot
-        build_tree_from_snapshot(commit, commit.snapshot)
+        from storage.services.tree_services import build_tree_from_snapshots
+        build_tree_from_snapshots(commit, commit.snapshot)

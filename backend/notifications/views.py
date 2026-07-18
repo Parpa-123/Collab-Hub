@@ -16,14 +16,19 @@ class NotificationViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Notification.objects.none()
-        return Notification.objects.filter(
+        qs = Notification.objects.filter(
             recipient=self.request.user
         ).select_related('actor', 'content_type').prefetch_related(
             GenericPrefetch('content_object', [
                 PullRequest.objects.all(),
                 Issue.objects.all(),
             ])
-        ).order_by('-created_at')
+        )
+        is_read = self.request.query_params.get('is_read')
+        if is_read is not None:
+            is_read = is_read.lower() == 'true'
+            qs = qs.filter(is_read=is_read)
+        return qs.order_by('-created_at')
 
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
@@ -34,6 +39,13 @@ class NotificationViewSet(ReadOnlyModelViewSet):
             read_at=timezone.now(),
         )
         return Response({'message': 'All notifications marked as read'})
+
+    @action(detail=False, methods=['delete'])
+    def clear_all(self, request):
+        if not request.user.is_authenticated:
+            return Response({'message': 'Unauthorized'}, status=401)
+        Notification.objects.filter(recipient=request.user).delete()
+        return Response({'message': 'All notifications cleared'})
 
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):

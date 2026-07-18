@@ -7,12 +7,14 @@ from .views import (
 )
 from .social_views import GoogleLogin, MicrosoftLogin
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
+from dj_rest_auth.views import LogoutView
 
 app_name = "accounts"
 urlpatterns = [
     path('register/', CustomUserCreate.as_view(), name='register'),
     path('refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('login/', AuthenticationView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('me/', AuthenticatedUserView.as_view(), name='me'),
     path('profile-summary/', ProfileSummaryView.as_view(), name='profile_summary'),
     # Social login endpoints that return JWT tokens

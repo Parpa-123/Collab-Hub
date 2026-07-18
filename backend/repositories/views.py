@@ -20,6 +20,8 @@ from branches.models import Commit
 from storage.models import TreeNode
 from storage.services.diff_services import generate_diff
 from storage.services.tree_services import build_tree_from_snapshots
+from config.events.dispatcher import dispatch_event
+from config.events.event_types import REPO_MEMBER_ADDED
 
 
 class RepositoryViewSet(ModelViewSet):
@@ -146,6 +148,14 @@ class RepositoryDetailView(ModelViewSet):
             developer=serializer.validated_data["developer"],
             role=serializer.validated_data["role"],
         )
+        dispatch_event(
+            REPO_MEMBER_ADDED,
+            {
+                "actor": request.user,
+                "repo": repository,
+                "member": serializer.validated_data["developer"],
+            }
+        )
         return Response({"message": "Member added successfully", "role": member.role}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["get"])
@@ -157,12 +167,18 @@ class RepositoryDetailView(ModelViewSet):
         if not latest_commit or latest_commit.snapshot is None:
             return Response({"message": "No readme found"}, status=status.HTTP_404_NOT_FOUND)
 
-        readme_content = latest_commit.snapshot.get("README.md", None)
+        readme_blob_id = latest_commit.snapshot.get("README.md", None)
         
-        if not readme_content:
+        if not readme_blob_id:
+            return Response({"message": "No readme found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        from storage.models import Blob
+        readme_blob = Blob.objects.filter(id=readme_blob_id).first()
+        
+        if not readme_blob:
             return Response({"message": "No readme found"}, status=status.HTTP_404_NOT_FOUND)
         
-        return Response({"readme": readme_content}, status=status.HTTP_200_OK)
+        return Response({"readme": readme_blob.content}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def code_review(self, request, slug=None):
@@ -174,12 +190,18 @@ class RepositoryDetailView(ModelViewSet):
         if not latest_commit or latest_commit.snapshot is None:
             return Response({"message": "No code review found"}, status=status.HTTP_404_NOT_FOUND)
 
-        code_review = latest_commit.snapshot.get(file_path, None)
+        blob_id = latest_commit.snapshot.get(file_path, None)
         
-        if not code_review:
+        if not blob_id:
+            return Response({"message": "No code review found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        from storage.models import Blob
+        blob = Blob.objects.filter(id=blob_id).first()
+        
+        if not blob:
             return Response({"message": "No code review found"}, status=status.HTTP_404_NOT_FOUND)
         
-        return Response({"code_review": code_review}, status=status.HTTP_200_OK)
+        return Response({"code_review": blob.content}, status=status.HTTP_200_OK)
 
 
     
@@ -194,6 +216,7 @@ class RepositoryDetailView(ModelViewSet):
         branch_name = request.data.get("branch", repository.default_branch)
         message = request.data.get("message", "Uploaded files")
         files = request.FILES.getlist("files")
+        file_paths = request.data.getlist("file_paths")
         
         if not files:
             return Response({"error": "No files provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -205,14 +228,36 @@ class RepositoryDetailView(ModelViewSet):
         parent_commit = branch.head_commit
         snapshot = parent_commit.snapshot.copy() if parent_commit and parent_commit.snapshot else {}
         
-        for file in files:
-            path = file.name
-            try:
-                content = file.read().decode('utf-8')
-            except UnicodeDecodeError:
-                return Response({"error": f"File {path} is not valid UTF-8 text. Only text files are supported."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(file_paths) != len(files):
+            file_paths = [file.name for file in files]
             
-            snapshot[path] = content
+        import base64
+        import mimetypes
+        from storage.services.blob_service import bulk_get_or_create_blobs
+        
+        file_data_list = []
+        
+        for file, path in zip(files, file_paths):
+            raw_content = file.read()
+            is_binary = False
+            try:
+                content = raw_content.decode('utf-8')
+            except UnicodeDecodeError:
+                is_binary = True
+                mime_type, _ = mimetypes.guess_type(path)
+                mime_type = mime_type or 'application/octet-stream'
+                encoded = base64.b64encode(raw_content).decode('ascii')
+                content = f"data:{mime_type};base64,{encoded}"
+            
+            file_data_list.append({
+                'path': path,
+                'content': content,
+                'is_binary': is_binary
+            })
+            
+        path_to_blob_id = bulk_get_or_create_blobs(file_data_list)
+        for path, blob_id in path_to_blob_id.items():
+            snapshot[path] = blob_id
             
         with transaction.atomic():
             new_commit = Commit.objects.create(
@@ -230,6 +275,70 @@ class RepositoryDetailView(ModelViewSet):
             branch.save()
             
         return Response({"message": "Files uploaded and committed successfully."}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path="async-file-upload")
+    def async_file_upload(self, request, slug=None):
+        repository = self.get_object()
+        
+        if not IsRepositoryMember().has_object_permission(request, self, repository):
+            return Response({"message": "You are not authorized to perform this action"}, status=status.HTTP_403_FORBIDDEN)
+            
+        branch_name = request.data.get("branch", repository.default_branch)
+        message = request.data.get("message", "Uploaded files")
+        files = request.FILES.getlist("files")
+        file_paths = request.data.getlist("file_paths")
+        
+        if not files:
+            return Response({"error": "No files provided."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        branch = Branches.objects.filter(repository=repository, name=branch_name).first()
+        if not branch:
+            return Response({"error": "Branch not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+        if len(file_paths) != len(files):
+            file_paths = [file.name for file in files]
+            
+        import base64
+        import mimetypes
+        file_data_list = []
+        
+        for file, path in zip(files, file_paths):
+            raw_content = file.read()
+            is_binary = False
+            try:
+                content = raw_content.decode('utf-8')
+            except UnicodeDecodeError:
+                is_binary = True
+                mime_type, _ = mimetypes.guess_type(path)
+                mime_type = mime_type or 'application/octet-stream'
+                encoded = base64.b64encode(raw_content).decode('ascii')
+                content = f"data:{mime_type};base64,{encoded}"
+            
+            file_data_list.append({
+                'path': path,
+                'content': content,
+                'is_binary': is_binary
+            })
+            
+        from .tasks import process_async_upload
+        task = process_async_upload.delay(repository.id, branch.name, message, request.user.id, file_data_list)
+        
+        return Response({"message": "Upload processing started", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['get'], url_path="upload-status/(?P<task_id>[^/.]+)")
+    def upload_status(self, request, slug=None, task_id=None):
+        from celery.result import AsyncResult
+        task_result = AsyncResult(task_id)
+        
+        if task_result.state == 'PENDING':
+            return Response({"status": "PENDING", "message": "Upload is waiting to be processed"}, status=status.HTTP_200_OK)
+        elif task_result.state == 'SUCCESS':
+            return Response(task_result.result, status=status.HTTP_200_OK)
+        elif task_result.state == 'FAILURE':
+            return Response({"status": "FAILURE", "message": str(task_result.info)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            return Response({"status": task_result.state, "message": "Task is processing"}, status=status.HTTP_200_OK)
+
 
     @action(detail=True, methods=['delete'], url_path="remove-member")
     def remove_member(self, request, slug=None):
@@ -292,8 +401,159 @@ class RepositoryDetailView(ModelViewSet):
             return Response({"role": None}, status=status.HTTP_200_OK)
         return Response({"role": member.role}, status=status.HTTP_200_OK)
 
-    
-    
+    @action(detail=True, methods=['post'], url_path="missing-objects")
+    def missing_objects(self, request, slug=None):
+        repository = self.get_object()
+        if not IsRepositoryMember().has_object_permission(request, self, repository):
+            return Response({"message": "You are not authorized"}, status=status.HTTP_403_FORBIDDEN)
+            
+        object_hashes = request.data.get("objects", [])
+        if not object_hashes:
+            return Response({"missing": []}, status=status.HTTP_200_OK)
+            
+        from storage.services.blob_service import get_missing_blob_hashes
+        missing = get_missing_blob_hashes(object_hashes)
+        return Response({"missing": missing}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path="push")
+    def push(self, request, slug=None):
+        repository = self.get_object()
+        if not IsRepositoryMember().has_object_permission(request, self, repository):
+            return Response({"message": "You are not authorized"}, status=status.HTTP_403_FORBIDDEN)
+            
+        payload = request.data
+        commit_data = payload.get("commit", {})
+        tree_data = payload.get("tree", {})
+        blobs_data = payload.get("blobs", {})
+        branch_name = payload.get("branch", repository.default_branch)
+        
+        branch = Branches.objects.filter(repository=repository, name=branch_name).first()
+        if not branch:
+            branch = Branches.objects.create(repository=repository, name=branch_name, created_by=request.user)
+            
+        # Verify parent
+        parent_hash = commit_data.get("parent")
+        parent_commit = Commit.objects.filter(id=parent_hash).first() if parent_hash else branch.head_commit
+        
+        import base64
+        import mimetypes
+        from storage.services.blob_service import bulk_get_or_create_blobs
+        from storage.models import Blob
+        
+        file_data_list = []
+        for file_path, content_hash in tree_data.items():
+            base64_blob = blobs_data.get(content_hash)
+            if base64_blob:
+                raw_content = base64.b64decode(base64_blob)
+                is_binary = False
+                try:
+                    content = raw_content.decode('utf-8')
+                except UnicodeDecodeError:
+                    is_binary = True
+                    mime_type, _ = mimetypes.guess_type(file_path)
+                    mime_type = mime_type or 'application/octet-stream'
+                    encoded = base64.b64encode(raw_content).decode('ascii')
+                    content = f"data:{mime_type};base64,{encoded}"
+                
+                file_data_list.append({
+                    'path': file_path,
+                    'content': content,
+                    'is_binary': is_binary
+                })
+        
+        path_to_blob_id = bulk_get_or_create_blobs(file_data_list)
+        
+        snapshot = {}
+        for file_path, content_hash in tree_data.items():
+            if file_path in path_to_blob_id:
+                snapshot[file_path] = path_to_blob_id[file_path]
+            else:
+                blob = Blob.objects.filter(content_hash=content_hash).first()
+                if blob:
+                    snapshot[file_path] = str(blob.id)
+                    
+        with transaction.atomic():
+            new_commit = Commit.objects.create(
+                repository=repository,
+                branch=branch,
+                parent=parent_commit,
+                message=commit_data.get("message", "Pushed via Web"),
+                author=request.user,
+                snapshot=snapshot
+            )
+            
+            build_tree_from_snapshots(new_commit, snapshot)
+            branch.head_commit = new_commit
+            branch.save()
+            
+        return Response({"message": "Successfully pushed", "commit": str(new_commit.id)}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path="commits")
+    def commits(self, request, slug=None):
+        repository = self.get_object()
+        if not IsRepositoryMember().has_object_permission(request, self, repository) and repository.visibility != Repository.Visibility.PUBLIC:
+             return Response({"message": "You are not authorized"}, status=status.HTTP_403_FORBIDDEN)
+             
+        branch_name = request.query_params.get("branch", repository.default_branch)
+        branch = Branches.objects.filter(repository=repository, name=branch_name).first()
+        if not branch or not branch.head_commit:
+            return Response([], status=status.HTTP_200_OK)
+            
+        commit = branch.head_commit
+        
+        tree_mapping = {}
+        blobs_data = {}
+        import base64
+        import re
+        from storage.models import Blob
+        
+        import uuid
+        import re
+        from storage.models import Blob
+        import base64
+
+        all_blob_ids = set()
+        for b_id in commit.snapshot.values():
+            if b_id:
+                try:
+                    all_blob_ids.add(uuid.UUID(str(b_id)))
+                except ValueError:
+                    pass
+        
+        blobs_dict = Blob.objects.in_bulk(list(all_blob_ids))
+
+        for path, blob_id in commit.snapshot.items():
+            blob = None
+            if blob_id:
+                try:
+                    blob = blobs_dict.get(uuid.UUID(str(blob_id)))
+                except ValueError:
+                    pass
+
+            if blob:
+                content_hash = blob.content_hash
+                tree_mapping[path] = content_hash
+                
+                if blob.is_binary:
+                    match = re.match(r"data:.*?;base64,(.*)", blob.content)
+                    b64 = match.group(1) if match else blob.content
+                    blobs_data[content_hash] = b64
+                else:
+                    blobs_data[content_hash] = base64.b64encode(blob.content.encode('utf-8')).decode('ascii')
+        
+        payload = [{
+            "commit": {
+                "message": commit.message,
+                "timestamp": commit.created_at.timestamp(),
+                "parent": str(commit.parent.id) if commit.parent else None
+            },
+            "commit_hash": str(commit.id),
+            "tree": tree_mapping,
+            "tree_hash": str(commit.id),
+            "blobs": blobs_data
+        }]
+        
+        return Response(payload, status=status.HTTP_200_OK)
     def get_permissions(self):
         if self.action == "retrieve":
             return [IsRepositoryMember(), IsAuthenticated()]

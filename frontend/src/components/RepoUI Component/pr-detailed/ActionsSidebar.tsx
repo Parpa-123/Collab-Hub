@@ -8,10 +8,13 @@ interface ActionsSidebarProps {
   approvedCount: number;
   canApprove: boolean;
   canMerge: boolean;
+  canToggleDraft: boolean;
   isMaintainer: boolean;
   onApprove: () => void;
+  onConvertToDraft: () => void;
   onClose: () => void;
   onMerge: () => void;
+  onReadyForReview: () => void;
   onReopen: () => void;
   pr: PullRequestDetail;
 }
@@ -22,10 +25,13 @@ export default function ActionsSidebar({
   approvedCount,
   canApprove,
   canMerge,
+  canToggleDraft,
   isMaintainer,
   onApprove,
+  onConvertToDraft,
   onClose,
   onMerge,
+  onReadyForReview,
   onReopen,
   pr,
 }: ActionsSidebarProps) {
@@ -57,6 +63,26 @@ export default function ActionsSidebar({
             )}
 
             <div>
+              {canToggleDraft && (
+                <Button
+                  className="mb-2 w-full justify-start border-border"
+                  disabled={
+                    actionLoading === "convert_to_draft" || actionLoading === "ready_for_review"
+                  }
+                  onClick={pr.is_draft ? onReadyForReview : onConvertToDraft}
+                  variant="outline"
+                >
+                  <GitPullRequest className="w-4 h-4 mr-2" />
+                  {pr.is_draft
+                    ? actionLoading === "ready_for_review"
+                      ? "Marking ready..."
+                      : "Ready for review"
+                    : actionLoading === "convert_to_draft"
+                      ? "Converting..."
+                      : "Convert to draft"}
+                </Button>
+              )}
+
               <Button
                 className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
                 disabled={!canMerge || actionLoading === "merge"}
@@ -69,6 +95,11 @@ export default function ActionsSidebar({
               {pr.has_conflicts && (
                 <p className="text-[11px] text-destructive mt-1 font-medium px-1">
                   Resolve conflicts before merging.
+                </p>
+              )}
+              {pr.is_draft && (
+                <p className="text-[11px] text-amber-700 dark:text-amber-500 mt-1 font-medium px-1">
+                  Draft PRs must be marked ready before merge.
                 </p>
               )}
               {!isMaintainer && !pr.has_conflicts && (

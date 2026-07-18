@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import connect from "../../axios/connect";
 import { fetchAllPages } from "@/lib/pagination";
 import { errorToast, successToast } from "../../lib/toast";
@@ -282,11 +283,7 @@ const IssueDetail = () => {
             </div>
 
             <div className="px-4 py-5 text-sm text-foreground leading-relaxed min-h-[80px]">
-              {issue.description ? (
-                <p className="whitespace-pre-wrap">{issue.description}</p>
-              ) : (
-                <p className="text-muted-foreground italic">No description provided.</p>
-              )}
+              <MarkdownRenderer className="space-y-3" content={issue.description || ""} />
             </div>
           </div>
 

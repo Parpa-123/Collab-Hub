@@ -23,16 +23,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 const Header = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
-  const { login, setLogin } = useContext(userContext)
+  const { login, setLogin, isLoading } = useContext(userContext)
   const { theme, setTheme } = useTheme()
   const [isSignOutOpen, setIsSignOutOpen] = useState(false)
 
   useEffect(() => {
-    if (!login) setIsAuthOpen(true)
-  }, [login])
+    if (!isLoading && !login) setIsAuthOpen(true)
+  }, [login, isLoading])
 
   const handleRegister = async (formData: FormData) => {
     const email = formData.get("email") as string
@@ -134,7 +135,9 @@ const Header = () => {
           <Link to="/"><img src={logo} alt="CollabHub Logo" className="h-20 w-auto" /></Link>
 
           <div className="flex items-center gap-3">
-            {!login ? (
+            {isLoading ? (
+              <Spinner size="md" />
+            ) : !login ? (
               <AuthDialog
                 isOpen={isAuthOpen}
                 setIsOpen={setIsAuthOpen}

@@ -33,13 +33,13 @@ const Repo = () => {
     const description = data.get('description') as string;
     const visibility = data.get('visibility') as string;
     try {
-      await connect.post('/repositories/', {
+      const res = await connect.post('/repositories/', {
         name,
         description,
         visibility
       });
       successToast('Repository created successfully!');
-      nav("profile?tab=repositories");
+      nav(`/${res.data.slug}`);
     } catch (error) {
       errorToast(error, 'Failed to create repository');
     }

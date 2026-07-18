@@ -53,8 +53,16 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export function getStatusMeta(status: PullRequestDetail["status"]) {
-  switch (status) {
+export function getStatusMeta(pr: Pick<PullRequestDetail, "status" | "is_draft">) {
+  if (pr.status === "OPEN" && pr.is_draft) {
+    return {
+      color: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+      icon: GitPullRequest,
+      label: "Draft",
+    };
+  }
+
+  switch (pr.status) {
     case "OPEN":
       return { color: "bg-green-600 dark:bg-green-700 text-white", icon: GitPullRequest, label: "Open" };
     case "MERGED":

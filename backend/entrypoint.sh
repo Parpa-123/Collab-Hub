@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-# exit on error
 set -o errexit
+
+echo "Checking external services..."
+
+# Wait for Redis if configured
+if [ -n "$REDIS_HOST" ] && [ -n "$REDIS_PORT" ]; then
+    echo "Waiting for Redis ($REDIS_HOST:$REDIS_PORT)..."
+    while ! nc -z "$REDIS_HOST" "$REDIS_PORT"; do
+        sleep 0.5
+    done
+    echo "Redis is up!"
+fi
 
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
@@ -24,5 +34,10 @@ if email and password:
         print(f"Superuser {email} already exists.")
 EOF
 
-echo "Starting Gunicorn server..."
-exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
+if [ "$#" -eq 0 ]; then
+  set -- daphne -b 0.0.0.0 -p 8000 config.asgi:application
+fi
+
+echo "Starting application server: $*"
+exec "$@"
+

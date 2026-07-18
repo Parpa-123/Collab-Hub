@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 from unittest.mock import Mock
 
-from PullRequest.services.diff_service import generate_diff
+from storage.services.diff_services import generate_diff
 
 
 def _make_commit(snapshot):

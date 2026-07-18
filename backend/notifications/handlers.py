@@ -1,7 +1,7 @@
 import logging
-from .tasks import notify_pr_created, notify_pr_commented, notify_pr_reviewed, notify_issue_created, notify_issue_assigned, notify_pr_reopened
+from .tasks import notify_pr_created, notify_pr_commented, notify_pr_reviewed, notify_issue_created, notify_issue_assigned, notify_pr_reopened, notify_pr_merged, notify_pr_closed, notify_issue_closed, notify_repo_member_added
 from config.events.decorators import event_handler
-from config.events.event_types import COMMENT_CREATED, PR_CREATED, PR_COMMENTED, PR_REVIEWED, ISSUE_CREATED, ISSUE_ASSIGNED, PR_REOPENED
+from config.events.event_types import COMMENT_CREATED, PR_CREATED, PR_COMMENTED, PR_REVIEWED, ISSUE_CREATED, ISSUE_ASSIGNED, PR_REOPENED, PR_MERGED, PR_CLOSED, ISSUE_CLOSED, REPO_MEMBER_ADDED
 from .tasks import notify_generic_comment
 
 logger = logging.getLogger(__name__)
@@ -51,3 +51,19 @@ def handle_issue_assigned(payload):
 @event_handler(COMMENT_CREATED)
 def handle_comment_created(payload):
     enqueue_notification_task(notify_generic_comment, payload['comment'].id)
+
+@event_handler(PR_MERGED)
+def handle_pr_merged(payload):
+    enqueue_notification_task(notify_pr_merged, payload['pr'].id, payload['actor'].id)
+
+@event_handler(PR_CLOSED)
+def handle_pr_closed(payload):
+    enqueue_notification_task(notify_pr_closed, payload['pr'].id, payload['actor'].id)
+
+@event_handler(ISSUE_CLOSED)
+def handle_issue_closed(payload):
+    enqueue_notification_task(notify_issue_closed, payload['issue'].id, payload['actor'].id)
+
+@event_handler(REPO_MEMBER_ADDED)
+def handle_repo_member_added(payload):
+    enqueue_notification_task(notify_repo_member_added, payload['repo'].id, payload['member'].id, payload['actor'].id)

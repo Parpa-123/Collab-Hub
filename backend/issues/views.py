@@ -11,7 +11,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from config.events.dispatcher import dispatch_event
-from config.events.event_types import ISSUE_CREATED, ISSUE_ASSIGNED
+from config.events.event_types import ISSUE_CREATED, ISSUE_ASSIGNED, ISSUE_CLOSED
+from rest_framework.filters import OrderingFilter, SearchFilter
+from .realtime import broadcast_issue_event
 
 class IssueManagePermission(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -77,14 +79,17 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
     
     serializer_class = IssueSerializer
     permission_classes = [IssueManagePermission, permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = IssueFilter
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at", "updated_at", "id", "status"]
+    ordering = ["-updated_at"]
 
 
     def get_queryset(self):
         return Issue.objects.filter(
             repo__slug=self.kwargs.get('slug')
-        ).select_related('creator').prefetch_related('labels', 'issue_assignees')
+        ).select_related('creator', 'repo').prefetch_related('labels', 'issue_assignees').distinct()
 
     def get_object(self):
         return Issue.objects.get(repo__slug=self.kwargs.get('slug'), pk=self.kwargs.get('pk'))
@@ -92,6 +97,11 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
     def perform_create(self, serializer):
         repo = get_object_or_404(Repository, slug=self.kwargs.get('slug'))
         serializer.save(creator=self.request.user, repo=repo)
+        broadcast_issue_event(
+            event_type="issue_created",
+            issue=serializer.instance,
+            actor_id=self.request.user.id,
+        )
         
         dispatch_event(
             ISSUE_CREATED,
@@ -100,6 +110,41 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
                 "issue": serializer.instance
             }
         )
+
+    def perform_update(self, serializer):
+        old_status = serializer.instance.status
+        serializer.save()
+
+        event_type = "issue_moved" if old_status != serializer.instance.status else "issue_updated"
+        extra_meta = {}
+        if event_type == "issue_moved":
+            extra_meta = {
+                "from_status": old_status,
+                "to_status": serializer.instance.status,
+            }
+            if serializer.instance.status == "CLOSED":
+                dispatch_event(
+                    ISSUE_CLOSED,
+                    {
+                        "actor": self.request.user,
+                        "issue": serializer.instance,
+                    }
+                )
+
+        broadcast_issue_event(
+            event_type=event_type,
+            issue=serializer.instance,
+            actor_id=self.request.user.id,
+            extra_meta=extra_meta,
+        )
+
+    def perform_destroy(self, instance):
+        broadcast_issue_event(
+            event_type="issue_deleted",
+            issue=instance,
+            actor_id=self.request.user.id,
+        )
+        super().perform_destroy(instance)
     
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None, slug=None):
@@ -115,6 +160,12 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
             return Response({"error": "User is already assigned to this issue"}, status=400)
             
         issue_assignee = IssueAssignee.objects.create(issue=issue, assignee=user)
+        broadcast_issue_event(
+            event_type="issue_updated",
+            issue=issue,
+            actor_id=request.user.id,
+            extra_meta={"assignee_id": user.id},
+        )
         
         dispatch_event(
             ISSUE_ASSIGNED,

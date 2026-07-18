@@ -64,6 +64,7 @@ class PullRequest(CommonModel):
         choices=STATUS_CHOICES,
         default="OPEN"
     )
+    is_draft = models.BooleanField(default=False)
 
     diff_status = models.CharField(
         max_length=20,
@@ -113,6 +114,8 @@ class PullRequest(CommonModel):
     @property
     def is_mergeable(self):
         if self.status != "OPEN":
+            return False
+        if self.is_draft:
             return False
 
         if self.source_branch_deleted or self.target_branch_deleted:
@@ -206,3 +209,29 @@ class Review(CommonModel):
 
     class Meta:
         unique_together = ("pr", "reviewer")
+
+
+class PullRequestViewedFile(CommonModel):
+    pr = models.ForeignKey(
+        PullRequest,
+        on_delete=models.CASCADE,
+        related_name="viewed_files",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="pull_request_viewed_files",
+    )
+    file_path = models.CharField(max_length=1024)
+    viewed = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pr", "user", "file_path"],
+                name="unique_pr_user_viewed_file_path",
+            )
+        ]
+
+    def __str__(self):
+        return f"PR #{self.pr_id} {self.user_id} {self.file_path} viewed={self.viewed}"

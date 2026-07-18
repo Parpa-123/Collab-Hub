@@ -11,6 +11,7 @@ export interface PullRequestDetail {
   title: string;
   description: string;
   status: "OPEN" | "CLOSED" | "MERGED";
+  is_draft: boolean;
   source_name: string;
   target_name: string;
   created_by: number;
@@ -37,4 +38,18 @@ export interface FileDiff {
   deletions: number;
 }
 
-export type PullRequestAction = "merge" | "close" | "reopen" | "approve";
+export interface ViewedFileState {
+  id: number;
+  file_path: string;
+  viewed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PullRequestAction =
+  | "merge"
+  | "close"
+  | "reopen"
+  | "approve"
+  | "ready_for_review"
+  | "convert_to_draft";

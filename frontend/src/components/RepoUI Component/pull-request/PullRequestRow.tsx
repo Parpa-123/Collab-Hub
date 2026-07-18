@@ -64,6 +64,11 @@ export default function PullRequestRow({
               #{pr.id} - {pr.source_name} to {pr.target_name} - opened{" "}
               {dayjs(pr.created_at).fromNow()}
             </p>
+            {pr.is_draft && (
+              <span className="mt-1 inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-500">
+                Draft
+              </span>
+            )}
 
             {pr.status === "OPEN" && reviews.length > 0 && (
               <div className="flex items-center gap-1 mt-1">
@@ -85,6 +90,16 @@ export default function PullRequestRow({
 
           {pr.status === "OPEN" && (
             <div className="flex items-center gap-1">
+              <button
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border bg-card border-border text-muted-foreground hover:bg-muted"
+                onClick={() =>
+                  onAction(pr.id, pr.is_draft ? "ready-for-review" : "convert-to-draft")
+                }
+                title={pr.is_draft ? "Mark ready for review" : "Convert to draft"}
+              >
+                {pr.is_draft ? "Ready" : "Draft"}
+              </button>
+
               {canApprove && (
                 <button
                   className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition ${
@@ -102,9 +117,14 @@ export default function PullRequestRow({
               )}
 
               <button
-                className="p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-500/10 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${
+                  pr.is_draft
+                    ? "text-muted-foreground/40 cursor-not-allowed"
+                    : "text-muted-foreground hover:text-purple-600 hover:bg-purple-500/10"
+                }`}
+                disabled={pr.is_draft}
                 onClick={() => onAction(pr.id, "merge")}
-                title="Merge"
+                title={pr.is_draft ? "Draft PR cannot be merged" : "Merge"}
               >
                 <GitMerge className="w-4 h-4" />
               </button>

@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import connect from "../../axios/connect";
 import { fetchAllPages } from "@/lib/pagination";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import CommentList from "../comments/CommentList";
 import ActionsSidebar from "./pr-detailed/ActionsSidebar";
 import DiffFilesPanel from "./pr-detailed/DiffFilesPanel";
@@ -22,6 +23,7 @@ import type {
   PullRequestAction,
   PullRequestDetail,
   PullRequestReview,
+  ViewedFileState,
 } from "./pr-detailed/types";
 
 dayjs.extend(relativeTime);
@@ -45,6 +47,8 @@ const PRDetailed = () => {
 
   const [diffFiles, setDiffFiles] = useState<FileDiff[]>([]);
   const [diffLoading, setDiffLoading] = useState(false);
+  const [viewedMap, setViewedMap] = useState<Record<string, boolean>>({});
+  const [hideViewed, setHideViewed] = useState(false);
 
   const [actionLoading, setActionLoading] = useState<PullRequestAction | null>(null);
 
@@ -91,6 +95,24 @@ const PRDetailed = () => {
       setReviews(response);
     } catch (fetchError) {
       errorToast(fetchError, "Failed to load reviews");
+    }
+  }, [id, slug]);
+
+  const fetchViewedFiles = useCallback(async () => {
+    if (!slug || !id) {
+      return;
+    }
+    try {
+      const response = await connect.get<ViewedFileState[]>(
+        `/repositories/${slug}/pull-requests/${id}/viewed-files/`
+      );
+      const map = response.data.reduce<Record<string, boolean>>((acc, item) => {
+        acc[item.file_path] = item.viewed;
+        return acc;
+      }, {});
+      setViewedMap(map);
+    } catch (fetchError) {
+      errorToast(fetchError, "Failed to load viewed files");
     }
   }, [id, slug]);
 
@@ -162,6 +184,7 @@ const PRDetailed = () => {
       }
     };
 
+    void fetchViewedFiles();
     void pollDiff(0);
 
     return () => {
@@ -170,7 +193,7 @@ const PRDetailed = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [activeTab, id, pr, slug]);
+  }, [activeTab, fetchViewedFiles, id, pr, slug]);
 
   const handleAction = useCallback(
     async (action: "close" | "reopen") => {
@@ -247,6 +270,53 @@ const PRDetailed = () => {
     }
   }, [fetchReviews, id, slug]);
 
+  const handleDraftState = useCallback(
+    async (action: "ready_for_review" | "convert_to_draft") => {
+      if (!slug || !id) {
+        return;
+      }
+
+      setActionLoading(action);
+      setError(null);
+
+      const endpoint = action === "ready_for_review" ? "ready-for-review" : "convert-to-draft";
+
+      try {
+        await connect.post(`/repositories/${slug}/pull-requests/${id}/${endpoint}/`);
+        await fetchPR();
+      } catch (actionError) {
+        const errorMsg = getApiErrorMessage(actionError, "Failed to update draft state.");
+        setError(errorMsg);
+        errorToast(actionError, errorMsg);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [fetchPR, id, slug]
+  );
+
+  const handleToggleViewed = useCallback(
+    async (filePath: string, viewed: boolean) => {
+      if (!slug || !id) {
+        return;
+      }
+
+      const previous = viewedMap[filePath];
+      setViewedMap((prev) => ({ ...prev, [filePath]: viewed }));
+
+      try {
+        await connect.patch(
+          `/repositories/${slug}/pull-requests/${id}/viewed-files/`,
+          { file_path: filePath, viewed }
+        );
+      } catch (actionError) {
+        setViewedMap((prev) => ({ ...prev, [filePath]: previous ?? false }));
+        errorToast(actionError, "Failed to update viewed file status");
+      }
+    },
+    [id, slug, viewedMap]
+  );
+
   if (!pr && loading && !error) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -274,9 +344,10 @@ const PRDetailed = () => {
 
   const isMaintainer = myRole === "admin" || myRole === "maintainer";
   const canApprove = isMaintainer;
-  const canMerge = isMaintainer && !pr.has_conflicts && pr.status === "OPEN";
+  const canMerge = isMaintainer && !pr.has_conflicts && pr.status === "OPEN" && !pr.is_draft;
+  const canToggleDraft = pr.status === "OPEN";
 
-  const statusMeta = getStatusMeta(pr.status);
+  const statusMeta = getStatusMeta(pr);
   const StatusIcon = statusMeta.icon;
   const authorName =
     pr.created_by_detail?.full_name ||
@@ -361,9 +432,7 @@ const PRDetailed = () => {
                   Description
                 </div>
                 <div className="p-4 text-sm text-foreground whitespace-pre-wrap">
-                  {pr.description || (
-                    <span className="text-muted-foreground italic">No description provided.</span>
-                  )}
+                  <MarkdownRenderer className="space-y-3" content={pr.description || ""} />
                 </div>
               </div>
 
@@ -378,9 +447,13 @@ const PRDetailed = () => {
             <DiffFilesPanel
               diffFiles={diffFiles}
               diffLoading={diffLoading}
+              hideViewed={hideViewed}
               myRole={myRole}
+              onToggleHideViewed={setHideViewed}
+              onToggleViewed={handleToggleViewed}
               prId={pr.id}
               slug={slug}
+              viewedMap={viewedMap}
             />
           )}
         </div>
@@ -391,12 +464,19 @@ const PRDetailed = () => {
           approvedCount={approvedCount}
           canApprove={canApprove}
           canMerge={canMerge}
+          canToggleDraft={canToggleDraft}
           isMaintainer={isMaintainer}
           onApprove={handleApprove}
+          onConvertToDraft={() => {
+            void handleDraftState("convert_to_draft");
+          }}
           onClose={() => {
             void handleAction("close");
           }}
           onMerge={() => setMergeModalOpen(true)}
+          onReadyForReview={() => {
+            void handleDraftState("ready_for_review");
+          }}
           onReopen={() => {
             void handleAction("reopen");
           }}

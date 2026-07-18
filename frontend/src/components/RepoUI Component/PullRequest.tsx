@@ -28,6 +28,7 @@ const INITIAL_FORM: PullRequestFormState = {
   description: "",
   source_branch: "",
   target_branch: "",
+  is_draft: false,
 };
 
 function getStatusBadgeClass(status: PullRequest["status"]) {
@@ -286,6 +287,7 @@ const PullRequests = () => {
         description: form.description,
         source_branch: Number(form.source_branch),
         target_branch: Number(form.target_branch),
+        is_draft: form.is_draft,
       });
       setShowCreate(false);
       setForm(INITIAL_FORM);

@@ -36,7 +36,7 @@ if DEBUG:
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 render_external_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-default_allowed_hosts = ["localhost", "127.0.0.1"]
+default_allowed_hosts = ["localhost", "127.0.0.1", "http://localhost"]
 if render_external_hostname:
     default_allowed_hosts.append(render_external_hostname)
 
@@ -57,8 +57,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "channels",
     "rest_framework",
-    "rest_framework.authtoken",
     "django_filters",
     "corsheaders",
     "drf_spectacular",
@@ -84,9 +84,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -100,7 +100,8 @@ MIDDLEWARE = [
 default_cors_allowed_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://collab-hub-1.onrender.com"
+    "https://collab-hub-1.onrender.com",
+    "http://localhost",
 ]
 if FRONTEND_URL not in default_cors_allowed_origins:
     default_cors_allowed_origins.append(FRONTEND_URL)
@@ -160,6 +161,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.getenv("CHANNEL_REDIS_URL", "redis://127.0.0.1:6379/1")],
+        },
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -192,10 +203,13 @@ SPECTACULAR_SETTINGS = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 if DEBUG:
+    # Ensure the db_data directory exists
+    import os
+    os.makedirs(BASE_DIR / "db_data", exist_ok=True)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": BASE_DIR / "db_data" / "db.sqlite3",
         }
     }
 else:
@@ -307,6 +321,9 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 

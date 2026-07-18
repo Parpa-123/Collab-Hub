@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { BookOpen, Clock3, Loader2 } from "lucide-react";
+import { BookOpen, Clock3 } from "lucide-react";
 import { userContext } from "../Context/userContext";
 import connect from "../axios/connect";
 import { fetchAllPages } from "../lib/pagination";
@@ -9,11 +9,12 @@ import RightSidebar from "./dashboard/RightSidebar";
 import { getGreeting } from "./dashboard/helpers";
 import { errorToast } from "../lib/toast";
 import type { NotificationItem, Repo } from "./dashboard/types";
+import { Spinner } from "@/components/ui/spinner";
 
 function DashboardLoading() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <Spinner size="lg" />
     </div>
   );
 }

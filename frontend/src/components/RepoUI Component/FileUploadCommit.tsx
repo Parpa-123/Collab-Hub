@@ -26,6 +26,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dirInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setBranch(defaultBranch);
@@ -39,6 +40,27 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
 
   const removeFile = (idx: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const pollTaskStatus = async (taskId: string) => {
+    try {
+      const res = await connect.get(`/repositories/${slug}/upload-status/${taskId}/`);
+      const status = res.data.status?.toUpperCase();
+      if (status === 'SUCCESS') {
+        setOpen(false);
+        setFiles([]);
+        if (onSuccess) onSuccess();
+        setLoading(false);
+      } else if (status === 'FAILURE') {
+        setError(res.data.message || "Failed to process files.");
+        setLoading(false);
+      } else {
+        setTimeout(() => pollTaskStatus(taskId), 2000);
+      }
+    } catch (err: any) {
+      setError("Failed to check upload status. Please try again.");
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -58,24 +80,30 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
     files.forEach((file) => {
       // Append each file. Using 'files' as key since backend uses `getlist('files')`
       formData.append("files", file, file.name);
+      formData.append("file_paths", file.webkitRelativePath || file.name);
     });
 
     try {
-      await connect.post(`/repositories/${slug}/file-upload/`, formData, {
+      const response = await connect.post(`/repositories/${slug}/async-file-upload/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      setOpen(false);
-      setFiles([]);
-      if (onSuccess) onSuccess();
+      const taskId = response.data.task_id;
+      if (taskId) {
+        pollTaskStatus(taskId);
+      } else {
+        setOpen(false);
+        setFiles([]);
+        if (onSuccess) onSuccess();
+        setLoading(false);
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.error || 
         err.response?.data?.message || 
         "Failed to upload files. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -91,7 +119,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
         <DialogHeader>
           <DialogTitle>Commit Files</DialogTitle>
           <DialogDescription>
-            Upload generic text files directly to your repository via the web.
+            Upload files or directories directly to your repository via the web.
           </DialogDescription>
         </DialogHeader>
 
@@ -102,25 +130,44 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
         )}
 
         <div className="space-y-4 py-2">
-          {/* File input area */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer
-              ${files.length > 0 ? "border-primary bg-primary/5" : "border-border hover:bg-accent"}`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <UploadCloud className={`w-8 h-8 mb-2 ${files.length > 0 ? "text-primary" : "text-muted-foreground"}`} />
-            <span className="text-sm font-medium text-foreground">
-              {files.length > 0
-                ? `${files.length} file${files.length === 1 ? "" : "s"} selected`
-                : "Choose files to upload"}
-            </span>
-            <input
-              type="file"
-              multiple
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-            />
+          {/* File and Directory input area */}
+          <div className="flex gap-4 w-full">
+            <div
+              className={`flex-1 border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer
+                ${files.length > 0 ? "border-primary bg-primary/5" : "border-border hover:bg-accent"}`}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <UploadCloud className={`w-8 h-8 mb-2 ${files.length > 0 ? "text-primary" : "text-muted-foreground"}`} />
+              <span className="text-sm font-medium text-foreground text-center">
+                {files.length > 0 ? `${files.length} file(s)` : "Upload Files"}
+              </span>
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+            </div>
+            
+            <div
+              className={`flex-1 border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer
+                ${files.length > 0 ? "border-primary bg-primary/5" : "border-border hover:bg-accent"}`}
+              onClick={() => dirInputRef.current?.click()}
+            >
+              <UploadCloud className={`w-8 h-8 mb-2 ${files.length > 0 ? "text-primary" : "text-muted-foreground"}`} />
+              <span className="text-sm font-medium text-foreground text-center">
+                Upload Directory
+              </span>
+              <input
+                type="file"
+                multiple
+                {...{ webkitdirectory: "" } as any}
+                className="hidden"
+                ref={dirInputRef}
+                onChange={handleFileChange}
+              />
+            </div>
           </div>
 
           {/* List selected files */}
@@ -128,7 +175,9 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
             <div className="max-h-32 overflow-y-auto space-y-1 bg-muted/50 border border-border rounded">
               {files.map((file, idx) => (
                 <div key={idx} className="flex items-center justify-between px-3 py-1.5 border-b border-border last:border-0 text-sm">
-                  <span className="truncate text-foreground font-mono text-xs">{file.name}</span>
+                  <span className="truncate text-foreground font-mono text-xs" title={file.webkitRelativePath || file.name}>
+                    {file.webkitRelativePath || file.name}
+                  </span>
                   <button onClick={() => removeFile(idx)} className="text-muted-foreground hover:text-destructive">
                     <X size={14} />
                   </button>
@@ -175,7 +224,7 @@ const FileUploadCommit = ({ slug, defaultBranch = "main", onSuccess }: FileUploa
             ) : (
               <CheckCircle2 className="w-4 h-4 mr-2" />
             )}
-            Commit changes
+            {loading ? "Processing..." : "Commit changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

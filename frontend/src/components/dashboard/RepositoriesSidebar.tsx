@@ -1,4 +1,5 @@
-import { BookOpen, Loader2, Plus, Search } from "lucide-react";
+import { BookOpen, Plus, Search } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Link } from "react-router-dom";
 import { renderVisibilityIcon } from "./helpers";
 import type { Repo } from "./types";
@@ -36,9 +37,9 @@ function RepoList({
 }: Pick<RepositoriesSidebarProps, "filteredRepos" | "loading" | "repoSearch">) {
   if (loading) {
     return (
-      <div className="px-4 py-8 text-center text-muted-foreground text-sm">
-        <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1.5" />
-        Loading...
+      <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center">
+        <Spinner size="md" className="mx-auto mb-1.5" />
+        <p className="text-sm">Loading repositories...</p>
       </div>
     );
   }

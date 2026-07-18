@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Bell, Inbox, Loader2 } from "lucide-react";
+import { Bell, Inbox } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { renderNotificationIcon } from "./helpers";
 import type { NotificationItem } from "./types";
 
@@ -14,8 +15,8 @@ interface ActivityPanelProps {
 
 function LoadingActivity() {
   return (
-    <div className="px-5 py-12 text-center text-muted-foreground">
-      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+    <div className="flex-1 py-12 text-center text-muted-foreground flex flex-col items-center justify-center">
+      <Spinner size="md" className="mx-auto mb-2" />
       <p className="text-sm">Loading activity...</p>
     </div>
   );

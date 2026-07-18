@@ -8,6 +8,7 @@ class Blob(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     content = models.TextField()
     content_hash = models.CharField(max_length=64, unique=True, editable=False)
+    is_binary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def save(self, *args, **kwargs):

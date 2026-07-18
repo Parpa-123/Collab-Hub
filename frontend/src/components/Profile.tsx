@@ -19,6 +19,7 @@ import { fetchAllPages } from "../lib/pagination";
 import { errorToast } from "../lib/toast";
 import type { NotificationItem } from "./dashboard/types";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type ProfileTab = "overview" | "repositories" | "pull_requests" | "issues" | "activity";
+type ProfileTab = "overview" | "repositories" | "pull_requests" | "issues" | "activity" | "developer";
 
 interface ProfileSummaryResponse {
   user: {
@@ -420,7 +421,7 @@ const Profile = () => {
           <div className="p-4 md:p-6">
             {loadingTabData && (
               <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Spinner size="sm" />
                 Loading data...
               </div>
             )}
@@ -565,6 +566,7 @@ const Profile = () => {
                 )}
               </div>
             )}
+
           </div>
         </section>
       </div>

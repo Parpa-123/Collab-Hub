@@ -17,6 +17,11 @@ urlpatterns = [
     path('<slug:slug>/tree/', RepositoryTree.as_view(), name='repository-tree'),
     path('<slug:slug>/code-review/', RepositoryDetailView.as_view({'get': 'code_review'}), name='repository-code-review'),
     path('<slug:slug>/file-upload/', RepositoryDetailView.as_view({'post': 'file_upload'}), name='repository-file-upload'),
+    path('<slug:slug>/async-file-upload/', RepositoryDetailView.as_view({'post': 'async_file_upload'}), name='repository-async-file-upload'),
+    path('<slug:slug>/upload-status/<str:task_id>/', RepositoryDetailView.as_view({'get': 'upload_status'}), name='repository-upload-status'),
     path('<slug:slug>/file-content/', FileContent.as_view(), name='repository-file-content'),
     path('<slug:slug>/commit-diff/', CommitDiffView.as_view(), name='repository-commit-diff'),
+    path('<slug:slug>/missing-objects/', RepositoryDetailView.as_view({'post': 'missing_objects'}), name='repository-missing-objects'),
+    path('<slug:slug>/push/', RepositoryDetailView.as_view({'post': 'push'}), name='repository-push'),
+    path('<slug:slug>/commits/', RepositoryDetailView.as_view({'get': 'commits'}), name='repository-commits'),
 ]

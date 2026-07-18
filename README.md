@@ -190,17 +190,14 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-### Production (Docker Compose)
+### Local Development (Docker Compose)
 
 ```bash
-# 1. Build the frontend
-cd frontend && pnpm install && pnpm build && cd ..
-
-# 2. Start all services
+# 1. Start all services
 docker compose up -d --build
 
-# 3. Access the application
-open http://localhost
+# 2. Access the application
+open http://localhost:5173
 ```
 
 ---
@@ -228,7 +225,7 @@ open http://localhost
 
 | Variable | Description | Default |
 |---|---|---|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000/api` |
+| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8001/api` |
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID | — |
 | `VITE_MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID | — |
 | `VITE_OAUTH_REDIRECT_URI` | OAuth callback URL | `http://localhost:5173/auth/callback` |
@@ -241,9 +238,9 @@ When the backend is running, interactive API documentation is available at:
 
 | Format | URL |
 |---|---|
-| Swagger UI | `http://localhost:8000/api/docs/` |
-| ReDoc | `http://localhost:8000/api/redoc/` |
-| OpenAPI Schema | `http://localhost:8000/api/schema/` |
+| Swagger UI | `http://localhost:8001/api/docs/` |
+| ReDoc | `http://localhost:8001/api/redoc/` |
+| OpenAPI Schema | `http://localhost:8001/api/schema/` |
 
 ### Principal API Endpoints
 

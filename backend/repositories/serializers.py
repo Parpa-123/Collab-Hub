@@ -29,6 +29,11 @@ class RepositoryListSerializer(serializers.ModelSerializer):
         return getattr(obj, 'my_role', None)
 
 class ViewRepositorySerializer(serializers.ModelSerializer):
+    """
+    WARNING: This serializer accesses `obj.branches.all()`. 
+    When used in list views, it will cause severe N+1 query bottlenecks 
+    unless the underlying queryset uses `.prefetch_related('branches')`.
+    """
     branches = serializers.SerializerMethodField()
     branch_names = serializers.SerializerMethodField()
     class Meta:
