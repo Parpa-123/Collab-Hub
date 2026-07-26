@@ -60,9 +60,25 @@ class IssueSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         parent = attrs.get("parent")
         repo = attrs.get("repo")
+        instance = getattr(self, 'instance', None)
 
-        if parent and parent.repo != repo:
-            raise serializers.ValidationError(
-                "Parent issue must belong to the same repository."
-            )
+        if parent:
+            if instance and parent.id == instance.id:
+                raise serializers.ValidationError("An issue cannot be its own parent.")
+
+            if repo and parent.repo != repo:
+                raise serializers.ValidationError(
+                    "Parent issue must belong to the same repository."
+                )
+
+            curr = parent
+            visited = set()
+            if instance:
+                visited.add(instance.id)
+            while curr:
+                if curr.id in visited:
+                    raise serializers.ValidationError("Circular parent issue relationship detected.")
+                visited.add(curr.id)
+                curr = curr.parent
+
         return attrs

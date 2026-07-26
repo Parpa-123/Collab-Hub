@@ -108,5 +108,9 @@ def trigger_diff_generation(pr_id, countdown=5):
     """
     Helper function to enqueue the diff generation task and set the cache lock for debouncing.
     """
-    task = store_diff.apply_async(args=[pr_id], countdown=countdown)
-    cache.set(f"pr_{pr_id}_diff_task_id", task.id, timeout=60 * 10)  # Lock for 10 minutes max
+    try:
+        task = store_diff.apply_async(args=[pr_id], countdown=countdown)
+        if task and hasattr(task, 'id'):
+            cache.set(f"pr_{pr_id}_diff_task_id", task.id, timeout=60 * 10)  # Lock for 10 minutes max
+    except Exception as e:
+        logger.warning(f"Could not enqueue diff generation task for PR {pr_id}: {e}")

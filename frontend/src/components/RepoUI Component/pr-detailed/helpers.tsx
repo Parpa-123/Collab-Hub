@@ -56,7 +56,7 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 export function getStatusMeta(pr: Pick<PullRequestDetail, "status" | "is_draft">) {
   if (pr.status === "OPEN" && pr.is_draft) {
     return {
-      color: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+      color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30",
       icon: GitPullRequest,
       label: "Draft",
     };
@@ -64,26 +64,26 @@ export function getStatusMeta(pr: Pick<PullRequestDetail, "status" | "is_draft">
 
   switch (pr.status) {
     case "OPEN":
-      return { color: "bg-green-600 dark:bg-green-700 text-white", icon: GitPullRequest, label: "Open" };
+      return { color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30", icon: GitPullRequest, label: "Open" };
     case "MERGED":
-      return { color: "bg-primary text-primary-foreground", icon: GitMerge, label: "Merged" };
+      return { color: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30", icon: GitMerge, label: "Merged" };
     case "CLOSED":
-      return { color: "bg-destructive text-destructive-foreground", icon: XCircle, label: "Closed" };
+      return { color: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30", icon: XCircle, label: "Closed" };
   }
 }
 
 export function getDiffLineClass(line: string) {
-  const baseClass = "px-2 py-0.5 whitespace-pre ";
+  const baseClass = "px-2 py-0.5 whitespace-pre font-mono text-xs ";
 
   if (line.startsWith("+") && !line.startsWith("+++")) {
-    return `${baseClass}bg-green-500/10 text-foreground dark:text-green-400`;
+    return `${baseClass}bg-emerald-500/15 text-emerald-950 dark:text-emerald-200`;
   }
   if (line.startsWith("-") && !line.startsWith("---")) {
-    return `${baseClass}bg-destructive/10 text-foreground dark:text-destructive`;
+    return `${baseClass}bg-rose-500/15 text-rose-950 dark:text-rose-200`;
   }
   if (line.startsWith("@@")) {
-    return `${baseClass}bg-primary/10 text-primary py-2`;
+    return `${baseClass}bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 py-1.5 font-semibold border-y border-indigo-500/20`;
   }
 
-  return `${baseClass}text-muted-foreground`;
+  return `${baseClass}text-slate-600 dark:text-slate-300`;
 }

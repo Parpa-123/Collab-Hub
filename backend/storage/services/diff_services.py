@@ -35,6 +35,9 @@ def generate_diff(base_commit, head_commit):
         base_blob_id = base_files.get(file_path)
         head_blob_id = head_files.get(file_path)
 
+        if base_blob_id and head_blob_id and str(base_blob_id) == str(head_blob_id):
+            continue
+
         base_blob = None
         if base_blob_id:
             try:
@@ -49,17 +52,31 @@ def generate_diff(base_commit, head_commit):
             except ValueError:
                 pass
 
-        base_content = base_blob.content if base_blob else ""
-        head_content = head_blob.content if head_blob else ""
-
         if not base_blob_id:
             status = "added"
         elif not head_blob_id:
             status = "removed"
         else:
+            if base_blob is None or head_blob is None:
+                # Missing blob integrity issue
+                diff.append({
+                    "file_path": file_path,
+                    "status": "error",
+                    "diff": ["Error: Referenced file blob is missing or corrupt in storage."],
+                    "additions": 0,
+                    "deletions": 0,
+                })
+                continue
+
+            base_content = base_blob.content
+            head_content = head_blob.content
+
             if base_content == head_content:
                 continue
             status = "modified"
+
+        base_content = base_blob.content if base_blob else ""
+        head_content = head_blob.content if head_blob else ""
 
         is_binary = (base_blob and base_blob.is_binary) or (head_blob and head_blob.is_binary)
         if is_binary:

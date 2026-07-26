@@ -126,12 +126,21 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             if pr.has_conflicts:
                 return Response({'error': 'Conflicts detected: Target branch has moved since PR creation'}, status=status.HTTP_400_BAD_REQUEST)
 
+            if pr.source_branch_deleted or pr.target_branch_deleted:
+                return Response({'error': 'Source or target branch has been deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if pr.base_commit != pr.target_branch.head_commit:
+                return Response({'error': 'Target branch has changed. Please rebase.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if pr.has_conflicts:
+                return Response({'error': 'Conflicts detected: Target branch has moved since PR creation'}, status=status.HTTP_400_BAD_REQUEST)
+
             if not pr.source_branch.head_commit:
                 return Response({'error': 'Source branch has no commits'}, status=400)
 
             latest_commit_id = pr.source_branch.head_commit.id
 
-            reviews = pr.reviews.filter(commit=latest_commit_id)
+            reviews = pr.reviews.filter(commit=latest_commit_id).exclude(reviewer=pr.created_by)
 
             approvals = reviews.filter(status="APPROVED").count()
             has_changes_requested = reviews.filter(status="CHANGES_REQUESTED").exists()
@@ -142,11 +151,7 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             if pr.target_branch.is_protected and approvals < 1:
                 return Response({'error': 'Cannot merge: At least one approval is required for protected branches'}, status=status.HTTP_400_BAD_REQUEST)
 
-            base_snapshot = pr.base_commit.snapshot if pr.base_commit else {}
-            merged_snapshot = {
-                **base_snapshot,
-                **pr.source_branch.head_commit.snapshot
-            }
+            merged_snapshot = dict(pr.source_branch.head_commit.snapshot or {})
             merge_commit = Commit.objects.create(
                 repository=pr.repo,
                 branch=pr.target_branch,
@@ -227,6 +232,7 @@ class PullRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reopen(self, request, **kwargs):
         pr = self.get_object()
+        if pr.status == "OPEN":
             return Response({'error': 'Pull request is already open'}, status=status.HTTP_400_BAD_REQUEST)
         if pr.status == "MERGED":
             return Response({'error': 'Cannot reopen a merged pull request'}, status=status.HTTP_400_BAD_REQUEST)
@@ -238,8 +244,12 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             
         # Refresh the PR state by wiping old reviews when re-initiated
         pr.reviews.all().delete()
-        
+        pr.precomputed_diff = None
+        pr.diff_status = "PROCESSING"
         pr.save()
+
+        from .tasks import trigger_diff_generation
+        trigger_diff_generation(pr.id)
 
         dispatch_event(
             PR_REOPENED,

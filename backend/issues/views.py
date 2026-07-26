@@ -156,6 +156,9 @@ class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
         from django.contrib.auth import get_user_model
         user = get_object_or_404(get_user_model(), id=assignee_id)
         
+        if not issue.repo.repositoryMembers.filter(developer=user).exists():
+            return Response({"error": "Assigned user is not a member of this repository"}, status=400)
+
         if IssueAssignee.objects.filter(issue=issue, assignee=user).exists():
             return Response({"error": "User is already assigned to this issue"}, status=400)
             

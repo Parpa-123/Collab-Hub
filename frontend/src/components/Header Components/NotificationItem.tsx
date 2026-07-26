@@ -78,8 +78,8 @@ const NotificationItem = ({ notification, onMarkRead }: NotificationItemProps) =
       className={`
         w-full flex items-start gap-3 px-4 py-3 text-left transition-colors
         ${notification.is_read
-          ? "bg-transparent opacity-60"
-          : "bg-blue-50/60 hover:bg-blue-50"
+          ? "bg-transparent text-muted-foreground/80 hover:bg-accent/50"
+          : "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20 text-foreground font-medium"
         }
       `}
     >

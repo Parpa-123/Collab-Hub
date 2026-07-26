@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "channels",
     "rest_framework",
+    "rest_framework.authtoken",
     "django_filters",
     "corsheaders",
     "drf_spectacular",
