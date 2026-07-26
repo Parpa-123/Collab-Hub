@@ -41,8 +41,8 @@ COPY --chown=appuser:appgroup . .
 # Ensure entrypoint is executable
 RUN chmod +x entrypoint.sh
 
-# Change ownership of the sqlite database directory
-RUN mkdir -p /app/db_data && chown -R appuser:appgroup /app/db_data
+# Create runtime directories with proper permissions
+RUN mkdir -p /app/db_data /app/staticfiles && chown -R appuser:appgroup /app/db_data /app/staticfiles /app
 
 # Switch to non-root user
 USER appuser

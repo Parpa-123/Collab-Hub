@@ -6,10 +6,16 @@ echo "Checking external services..."
 # Wait for Redis if configured
 if [ -n "$REDIS_HOST" ] && [ -n "$REDIS_PORT" ]; then
     echo "Waiting for Redis ($REDIS_HOST:$REDIS_PORT)..."
-    while ! nc -z "$REDIS_HOST" "$REDIS_PORT"; do
+    count=0
+    while ! nc -z -w 2 "$REDIS_HOST" "$REDIS_PORT"; do
         sleep 0.5
+        count=$((count+1))
+        if [ "$count" -ge 10 ]; then
+            echo "Warning: Redis check timed out, proceeding..."
+            break
+        fi
     done
-    echo "Redis is up!"
+    echo "Redis check finished."
 fi
 
 echo "Collecting static files..."
@@ -36,6 +42,11 @@ EOF
 
 if [ "$#" -eq 0 ]; then
   set -- daphne -b 0.0.0.0 -p 8000 config.asgi:application
+fi
+
+if [ "$1" != "celery" ]; then
+    echo "Starting Celery worker in background..."
+    celery -A config worker --loglevel=info --concurrency=1 &
 fi
 
 echo "Starting application server: $*"
