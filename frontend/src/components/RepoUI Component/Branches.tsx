@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
-import connect from '../../axios/connect';
-import { fetchAllPages } from '@/lib/pagination';
-import { useParams } from 'react-router-dom';
-import BranchesCreation from './BranchesCreation';
-import { GitBranch, Trash2, Pencil } from 'lucide-react';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { errorToast, successToast } from '../../lib/toast';
+import { useEffect, useState } from "react";
+import connect from "../../axios/connect";
+import { fetchAllPages } from "@/lib/pagination";
+import { useParams } from "react-router-dom";
+import BranchesCreation from "./BranchesCreation";
+import { GitBranch, Trash2, Pencil } from "lucide-react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { errorToast, successToast } from "../../lib/toast";
+import ActionStatusModal, { type StatusType } from "@/components/ui/action-status-modal";
 
 dayjs.extend(relativeTime);
 
@@ -22,12 +23,20 @@ const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const { slug } = useParams();
 
+  // Modal confirmation state for branch deletion
+  const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStatus, setModalStatus] = useState<StatusType>("idle");
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalDesc, setModalDesc] = useState("");
+  const [modalError, setModalError] = useState<string | undefined>(undefined);
+
   const fetchBranches = async () => {
     try {
       const data = await fetchAllPages<Branch>(connect, `/repositories/${slug}/branches`);
       setBranches(data);
     } catch (error) {
-      errorToast(error, 'Failed to fetch branches');
+      errorToast(error, "Failed to fetch branches");
     }
   };
 
@@ -38,66 +47,83 @@ const Branches = () => {
   const handleCreateBranch = async (formData: FormData) => {
     try {
       const payload = {
-        name: formData.get('name') as string,
-        is_protected: formData.get('is_protected') === 'on',
-        is_default: formData.get('is_default') === 'on',
-        source: formData.get('source') as string,
+        name: formData.get("name") as string,
+        is_protected: formData.get("is_protected") === "on",
+        is_default: formData.get("is_default") === "on",
+        source: formData.get("source") as string,
       };
 
       await connect.post(`/repositories/${slug}/branches/`, payload);
-      successToast('Branch created successfully!');
+      successToast("Branch created successfully!");
       fetchBranches();
     } catch (error) {
-      errorToast(error, 'Failed to create branch');
+      errorToast(error, "Failed to create branch");
     }
   };
 
-  const handleDeleteBranch = async (branchId: number, branchName: string) => {
-    if (!window.confirm(`Are you sure you want to delete branch "${branchName}"?`)) return;
+  const promptDeleteBranch = (branch: Branch) => {
+    setDeleteTarget(branch);
+    setModalStatus("idle");
+    setModalTitle(`Delete Branch "${branch.name}"?`);
+    setModalDesc("Are you sure you want to delete this branch? This action cannot be undone.");
+    setModalError(undefined);
+    setModalOpen(true);
+  };
+
+  const confirmDeleteBranch = async () => {
+    if (!deleteTarget) return;
+
+    setModalStatus("processing");
+    setModalTitle(`Deleting "${deleteTarget.name}"...`);
 
     try {
-      await connect.delete(`/repositories/${slug}/branches/${branchId}/`);
-      setBranches((prev) => prev.filter((b) => b.id !== branchId));
-      successToast('Branch deleted successfully!');
-    } catch (error) {
-      errorToast(error, 'Failed to delete branch');
+      await connect.delete(`/repositories/${slug}/branches/${deleteTarget.id}/`);
+      setBranches((prev) => prev.filter((b) => b.id !== deleteTarget.id));
+      setModalStatus("success");
+      setModalTitle("Branch Deleted");
+      setModalDesc(`Branch "${deleteTarget.name}" has been permanently removed.`);
+    } catch (error: any) {
+      setModalStatus("error");
+      setModalTitle("Failed to Delete Branch");
+      setModalError(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "An error occurred while deleting the branch."
+      );
     }
   };
 
   const handleUpdateBranch = async (id: number, formData: FormData) => {
     try {
       const payload = {
-        name: formData.get('name') as string,
-        is_protected: formData.get('is_protected') === 'on',
-        is_default: formData.get('is_default') === 'on',
+        name: formData.get("name") as string,
+        is_protected: formData.get("is_protected") === "on",
+        is_default: formData.get("is_default") === "on",
       };
       await connect.patch(`/repositories/${slug}/branches/${id}/`, payload);
-      successToast('Branch updated successfully!');
+      successToast("Branch updated successfully!");
       fetchBranches();
     } catch (error) {
-      errorToast(error, 'Failed to update branch');
+      errorToast(error, "Failed to update branch");
     }
   };
 
   return (
     <div className="px-6 py-6 bg-muted/30 min-h-full font-sans text-foreground">
-
       {/* Top row: Title + Create Branch */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <GitBranch className="w-5 h-5 text-muted-foreground" />
-          <h2 className="text-base font-semibold text-foreground">
-            Branches
-          </h2>
+          <h2 className="text-base font-semibold text-foreground">Branches</h2>
           <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20">
             {branches.length}
           </span>
         </div>
 
-        <BranchesCreation 
-          onCreateBranch={handleCreateBranch} 
-          branchlist={branches.map((branch) => branch.name)} 
-          defaultBranch={branches.find(b => b.is_default)?.name}
+        <BranchesCreation
+          onCreateBranch={handleCreateBranch}
+          branchlist={branches.map((branch) => branch.name)}
+          defaultBranch={branches.find((b) => b.is_default)?.name}
         />
       </div>
 
@@ -116,14 +142,12 @@ const Branches = () => {
                   {branch.name}
                 </span>
 
-                {/* Show default badge based on is_default field */}
                 {branch.is_default && (
                   <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20">
                     default
                   </span>
                 )}
 
-                {/* Show protected badge based on is_protected field */}
                 {branch.is_protected && (
                   <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-xs font-medium px-2 py-0.5 rounded-full border border-yellow-500/20">
                     protected
@@ -131,12 +155,11 @@ const Branches = () => {
                 )}
               </div>
 
-              {/* Right side: timestamp + delete */}
+              {/* Right side: timestamp + edit/delete */}
               <div className="flex items-center gap-4">
                 <span className="text-xs text-muted-foreground/70">
                   Updated {dayjs(branch.updated_on).fromNow()}
                 </span>
-
 
                 {!branch.is_default && (
                   <>
@@ -155,7 +178,7 @@ const Branches = () => {
                       }
                     />
                     <button
-                      onClick={() => handleDeleteBranch(branch.id, branch.name)}
+                      onClick={() => promptDeleteBranch(branch)}
                       className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                       title="Delete branch"
                     >
@@ -180,8 +203,30 @@ const Branches = () => {
 
       {/* Footer text */}
       <div className="text-center text-xs text-muted-foreground/60 mt-4">
-        Showing all {branches.length} {branches.length === 1 ? 'branch' : 'branches'}
+        Showing all {branches.length} {branches.length === 1 ? "branch" : "branches"}
       </div>
+
+      {/* Delete Branch Confirmation / Status Modal */}
+      <ActionStatusModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        status={modalStatus}
+        title={modalTitle}
+        description={modalDesc}
+        errorMessage={modalError}
+        primaryActionLabel={
+          modalStatus === "idle"
+            ? "Delete"
+            : modalStatus === "error"
+            ? "Close"
+            : "Done"
+        }
+        onPrimaryAction={
+          modalStatus === "idle" ? confirmDeleteBranch : () => setModalOpen(false)
+        }
+        secondaryActionLabel={modalStatus === "idle" ? "Cancel" : undefined}
+        onSecondaryAction={modalStatus === "idle" ? () => setModalOpen(false) : undefined}
+      />
     </div>
   );
 };
