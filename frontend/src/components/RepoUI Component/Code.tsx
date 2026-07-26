@@ -1,10 +1,9 @@
 import React from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { BookOpen, Code2, GitBranch, Info, Search, Tag } from "lucide-react";
+import { BookOpen, GitBranch, Info, Search, Tag } from "lucide-react";
 import connect from "../../axios/connect";
 import { errorToast } from "../../lib/toast";
 import FileUploadCommit from "./FileUploadCommit";
-import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import FileExplorer from "./FileExplorer";
 
 export interface RepoHeader {
@@ -88,45 +87,6 @@ const Code = () => {
                   defaultBranch={selectedBranch}
                   onSuccess={() => window.location.reload()}
                 />
-                
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="inline-flex h-9 items-center gap-2 rounded-md bg-green-600 px-3 text-sm font-medium text-white transition-opacity hover:opacity-90 dark:bg-green-700">
-                      <Code2 className="h-4 w-4" />
-                      Code
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-[400px] p-4 bg-card text-foreground border-border">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold mb-1">Clone with ghlite CLI</h4>
-                        <p className="text-sm text-muted-foreground">Use the official CLI tool to sync your repository locally.</p>
-                      </div>
-                      
-                      <div className="bg-muted p-3 rounded-md border border-border overflow-x-auto relative group">
-                        <pre className="text-sm font-mono text-muted-foreground">
-<code>{`pip install -e ./cli
-ghlite login <YOUR_TOKEN>
-ghlite init
-ghlite remote add origin http://localhost:8000/api/repositories/${slug}
-ghlite pull
-`}</code>
-                        </pre>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(`pip install -e ./cli\nghlite login <YOUR_TOKEN>\nghlite init\nghlite remote add origin http://localhost:8000/api/repositories/${slug}\nghlite pull`);
-                            // Optional: add a tiny toast here if you want
-                          }}
-                          className="absolute top-2 right-2 p-1.5 rounded-md bg-background/80 hover:bg-background border border-border opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Copy to clipboard"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                        </button>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
               </div>
             </div>
           </div>

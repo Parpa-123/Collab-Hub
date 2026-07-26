@@ -42,8 +42,8 @@ function roleBadgeStyle(role: string | null): string {
 function RepoListItem({ repo }: { repo: Repo }) {
   return (
     <Link
-      key={repo.slug}
-      to={`/${repo.slug}`}
+      key={repo.slug || repo.name}
+      to={`/${repo.slug || repo.name}`}
       className="flex items-start gap-4 px-5 py-4 hover:bg-muted/50 transition-colors group"
     >
       {/* Visibility icon */}
@@ -98,7 +98,7 @@ function RepoListItem({ repo }: { repo: Repo }) {
 function RepoGridCard({ repo }: { repo: Repo }) {
   return (
     <Link
-      to={`/${repo.slug}`}
+      to={`/${repo.slug || repo.name}`}
       className="flex flex-col bg-card border border-border rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group"
     >
       {/* Top row: icon + badges */}

@@ -64,9 +64,9 @@ const NotificationItem = ({ notification, onMarkRead }: NotificationItemProps) =
     const { content_object } = notification
     if (content_object && content_object.repo_slug) {
       if (content_object.type === "PullRequest") {
-        navigate(`/repo/${content_object.repo_slug}/pull-request/${content_object.id}`)
+        navigate(`/${content_object.repo_slug}/pullrequests/${content_object.id}`)
       } else if (content_object.type === "Issue") {
-        navigate(`/repo/${content_object.repo_slug}/issues/${content_object.id}`)
+        navigate(`/${content_object.repo_slug}/issues/${content_object.id}`)
       }
     }
   }

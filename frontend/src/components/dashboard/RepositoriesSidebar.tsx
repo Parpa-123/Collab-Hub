@@ -57,8 +57,8 @@ function RepoList({
       {filteredRepos.map((repo) => (
         <Link
           className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors group"
-          key={repo.slug}
-          to={`/${repo.slug}`}
+          key={repo.slug || repo.name}
+          to={`/${repo.slug || repo.name}`}
         >
           <div className="mt-0.5">{renderVisibilityIcon(repo.visibility)}</div>
 

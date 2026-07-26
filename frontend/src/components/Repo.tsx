@@ -38,8 +38,13 @@ const Repo = () => {
         description,
         visibility
       });
+      const targetSlug = res.data?.slug || res.data?.name;
       successToast('Repository created successfully!');
-      nav(`/${res.data.slug}`);
+      if (targetSlug) {
+        nav(`/${targetSlug}`);
+      } else {
+        nav('/repositories');
+      }
     } catch (error) {
       errorToast(error, 'Failed to create repository');
     }
