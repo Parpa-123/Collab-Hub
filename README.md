@@ -1,276 +1,385 @@
 # CollabHub
 
-**CollabHub** is a full-stack developer collaboration platform inspired by GitHub, built from the ground up with Django REST Framework and React. It provides a complete suite of tools for repository management, version control, code review, and team collaboration — all deployable on a single virtual machine.
+A full-stack Git-inspired collaboration platform for repository management, pull requests, issue tracking, and real-time collaboration.
 
-### [▶ Visit the Site](https://collab-hub-1.onrender.com/)
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Key Features](#key-features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
-- [License](#license)
-
----
+Live Demo: https://collab-hub-1.onrender.com
 
 ## Overview
 
-CollabHub replicates the core workflows of modern source code hosting platforms within a self-hosted, containerised environment. It enables developers to create and manage repositories, track files across branches, open and review pull requests with inline diff commenting, manage issues with labels and assignees, and receive real-time notifications — all through a polished, responsive web interface.
+CollabHub is an open-source developer collaboration platform built with Django REST Framework, Django Channels, Celery, and React 19. It provides Git-like content-addressable storage, real-time activity streaming, precomputed code diffs, polymorphic commenting, and comprehensive issue tracking.
 
-The platform is architected to run efficiently on resource-constrained infrastructure, including the Google Compute Engine free-tier (e2-micro, 1 GB RAM), making it suitable for small teams, educational environments, and personal use.
+## Tech Stack
 
----
+### Backend
+- **Django 5.2** - Web framework
+- **Django REST Framework 3.16** - API framework
+- **Django Channels 4.2** - WebSocket support
+- **Celery 5.6** - Distributed task queue
+- **PostgreSQL** - Production database (SQLite for development)
+- **Redis 7** - Caching, Celery broker, Channels layer
+- **SimpleJWT** - JWT authentication with HTTP-only cookies
+- **django-allauth** - Social authentication (Google, Microsoft OAuth 2.0)
+- **drf-spectacular** - OpenAPI documentation
 
-## Architecture
+### Frontend
+- **React 19.2** - UI library
+- **TypeScript 5.9** - Type safety
+- **Vite 7.2** - Build tool
+- **Tailwind CSS 4.1** - Styling
+- **Radix UI** - Accessible component primitives
+- **React Router DOM 7.12** - Routing
+- **Axios** - HTTP client
+- **react-markdown** - Markdown rendering
 
-```
-Client Browser
-      │
-      ▼
-    Nginx (port 80)
-      │
-      ├── /          → React SPA (static files)
-      ├── /api/      → Django REST Framework (Gunicorn)
-      ├── /admin/    → Django Admin
-      └── /static/   → Django Static Files (WhiteNoise)
-                          │
-                          ▼
-                      Redis (Broker)
-                          │
-                          ▼
-                    Celery Worker (Async Tasks)
-```
-
-All services are orchestrated via Docker Compose with memory-constrained containers for production stability.
-
----
-
-## Key Features
+## Features
 
 ### Repository Management
-- **Create, update, and delete** repositories with public or private visibility.
-- **Role-based access control** — Owner, Admin, Maintainer, and Member roles with granular permissions enforced at the API level.
-- **Slug-based routing** for clean, human-readable repository URLs.
-- **Dual-view repository listing** — toggle between list and grid layouts with real-time search and visibility filtering.
+- Public and private repositories
+- Role-based access control (Owner, Admin, Maintainer, Member)
+- File tree navigation and content viewing
+- Git-like push operations with commit history
+- Snapshot-based version control
 
-### Git-like Version Control
-- **Branch management** — create, protect, and delete branches with tracked parentage (`created_from`).
-- **Commit history** with parent tracking, merge parents, and JSON-based file snapshots.
-- **Content-addressable storage** — file contents are stored as SHA-256-hashed blobs, ensuring deduplication across the entire platform.
-- **Tree-based file system** — each commit references a tree of nodes (files and directories), faithfully modelling Git's internal object structure.
-- **File explorer** with in-browser file viewing and commit-linked uploads.
-
-### Pull Requests & Code Review
-- **Full pull request lifecycle** — open, close, reopen, and merge with status tracking.
-- **Asynchronous diff computation** — diffs are precomputed in the background via Celery, with status tracking (Pending → Processing → Completed/Failed).
-- **Conflict detection** — automatically identifies when the target branch has advanced beyond the PR's base commit.
-- **Merge eligibility checks** — enforces at least one approval and no outstanding change requests before permitting a merge.
-- **Code reviews** with approval, changes requested, and comment statuses, constrained to one review per reviewer per pull request.
-- **Inline diff commenting** — comments are anchored to specific file paths, line numbers, and diff sides (old/new).
+### Pull Requests
+- Draft and ready-for-review states
+- Precomputed async diff generation
+- Merge eligibility checks with conflict detection
+- Review system (Approve, Request Changes, Comment)
+- Viewed files tracking per user
+- Protected branch enforcement
 
 ### Issue Tracking
-- **Issue lifecycle** — Open, In Progress, and Closed statuses with timestamp tracking.
-- **Labels** with custom colours and descriptions, scoped per repository.
-- **Assignee management** through a dedicated junction model with assignment timestamps.
-- **Hierarchical issues** — issues may reference a parent issue, enabling sub-task organisation.
+- Status workflow (Open, In Progress, Closed)
+- Custom labels with colors
+- Parent-child issue relationships (epics/subtasks)
+- Assignee management
+- Real-time WebSocket updates
 
-### Comments System
-- **Polymorphic comments** — a single, generic comment model attaches to pull requests, reviews, commits, and issues via Django's `ContentType` framework.
-- **Threaded replies** — comments support nested parent-child relationships for structured discussions.
-- **Inline code comments** — comments on pull request diffs are anchored to file path, line number, and side (old/new).
+### Comments
+- Polymorphic commenting across PRs, Issues, Commits, and Reviews
+- Threaded replies
+- Line-number anchoring for code reviews
+- Side selection for diff comments (old/new)
 
-### Notifications & Activity
-- **Event-driven notifications** — creating pull requests, issues, and reviews automatically dispatches notifications to relevant recipients via Celery tasks.
-- **Generic activity log** — all significant actions (commits, PR merges, issue updates) are recorded in a per-repository activity feed with actor, verb, and content-object tracking.
-- **Read/unread management** with timestamps and indexed queries for performant retrieval.
-- **Real-time notification panel** in the frontend header with badge counts.
+### Activity & Notifications
+- Event-driven activity logging
+- Real-time notification broadcasting via WebSockets
+- Unread count tracking
+- Mark all read functionality
 
-### Authentication & Security
-- **JWT-based authentication** with HTTP-only cookie storage, automatic token rotation, and blacklisting of rotated refresh tokens.
-- **OAuth 2.0 integration** — Google and Microsoft social login via `django-allauth`, with a custom social account adapter for seamless onboarding.
-- **CORS and CSRF protection** fully configurable via environment variables, with sensible defaults.
-- **Automatic token refresh** — the Axios interceptor transparently refreshes expired access tokens without user intervention.
-
-### Frontend Experience
-- **Responsive, theme-aware UI** — full light and dark mode support with system-preference detection and manual toggling.
-- **Dashboard** with greeting banner, repository sidebar with search, activity feed, and statistics overview.
-- **User profile management** with in-app editing.
-- **User menu dropdown** with profile navigation, repositories link, and sign-out confirmation dialog.
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|---|---|
-| **Backend Framework** | Django 5.2, Django REST Framework 3.16 |
-| **Authentication** | SimpleJWT, dj-rest-auth, django-allauth |
-| **Task Queue** | Celery 5.6 with Redis 7 as broker and result backend |
-| **API Documentation** | drf-spectacular (OpenAPI 3.0, Swagger UI, ReDoc) |
-| **Frontend Framework** | React 19, TypeScript, Vite 7 |
-| **Styling** | Tailwind CSS 4, Radix UI primitives |
-| **HTTP Client** | Axios with interceptor-based token management |
-| **Routing** | React Router DOM 7 |
-| **Reverse Proxy** | Nginx (Alpine) |
-| **Database** | SQLite (development/single-VM) or PostgreSQL (production) |
-| **Static Files** | WhiteNoise with compressed manifest storage |
-| **Containerisation** | Docker, Docker Compose |
-
----
+### Content-Addressable Storage
+- SHA-256 hashing for file deduplication
+- Git-like blob and tree storage
+- Binary file support with Base64 encoding
 
 ## Project Structure
 
 ```
-CollabHub/
+.
 ├── backend/
-│   ├── accounts/          # Custom user model, OAuth, JWT auth
-│   ├── activity/          # Generic activity logging
+│   ├── accounts/          # User authentication, JWT, OAuth
+│   ├── activity/          # Activity stream and event handlers
 │   ├── branches/          # Branch and commit management
 │   ├── comments/          # Polymorphic comment system
-│   ├── common/            # Shared base model (CommonModel)
-│   ├── config/            # Django settings, URLs, WSGI, Celery
-│   ├── issues/            # Issue tracking with labels and assignees
-│   ├── notifications/     # Event-driven notification system
-│   ├── PullRequest/       # PR lifecycle, reviews, diff computation
-│   ├── repositories/      # Repository CRUD, membership, file management
-│   ├── storage/           # Content-addressable blob and tree storage
-│   ├── Dockerfile
-│   ├── entrypoint.sh
+│   ├── common/            # Shared model mixins
+│   ├── config/            # Django settings, URLs, ASGI/WSGI
+│   ├── issues/            # Issue tracking
+│   ├── notifications/     # User notifications
+│   ├── PullRequest/       # Pull request engine
+│   ├── repositories/      # Repository CRUD and file operations
+│   ├── storage/           # Content-addressable file storage
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/    # Pages and UI components
-│   │   ├── Context/       # React contexts (Auth, Theme, Toast)
-│   │   ├── axios/         # Axios instance with interceptors
-│   │   └── lib/           # Utilities (pagination, toast, etc.)
-│   ├── Dockerfile
-│   ├── Dockerfile.prod
-│   ├── nginx.conf
+│   │   ├── components/    # React components and pages
+│   │   ├── Context/       # React contexts (User, Theme)
+│   │   ├── axios/         # Axios interceptors
+│   │   ├── lib/           # Utilities
+│   │   ├── ui/            # UI primitives
+│   │   └── websocket/     # WebSocket client
 │   └── package.json
 ├── docker-compose.yml
-└── README.md
+└── .github/workflows/     # CI/CD workflows
 ```
 
----
+## API Endpoints
+
+### Authentication (`/api/accounts/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/register/` | User registration |
+| POST | `/login/` | JWT token obtain |
+| POST | `/refresh/` | Token refresh |
+| POST | `/logout/` | Logout |
+| GET | `/me/` | Current user info |
+| GET | `/profile-summary/` | User dashboard stats |
+| POST | `/google/` | Google OAuth |
+| POST | `/microsoft/` | Microsoft OAuth |
+
+### Repositories (`/api/repositories/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET, POST | `/` | List/create repositories |
+| GET, PUT, DELETE | `/<slug>/` | Repository CRUD |
+| GET | `/<slug>/members/` | List members |
+| POST | `/<slug>/add-member/` | Add member |
+| DELETE | `/<slug>/remove-member/` | Remove member |
+| PATCH | `/<slug>/members/<id>/role/` | Update role |
+| GET | `/<slug>/search-users/` | Search users |
+| POST | `/<slug>/file-upload/` | Upload files |
+| POST | `/<slug>/async-file-upload/` | Async file upload |
+| GET | `/<slug>/tree/` | File tree |
+| GET | `/<slug>/file-content/` | File content |
+| POST | `/<slug>/push/` | Git-like push |
+| GET | `/<slug>/commits/` | Commit history |
+| GET | `/<slug>/commit-diff/` | Diff between commits |
+
+### Pull Requests (`/api/repositories/<slug>/pull-requests/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET, POST | `/` | List/create PRs |
+| GET, PUT, DELETE | `/<pk>/` | PR CRUD |
+| POST | `/<pk>/merge/` | Merge PR |
+| POST | `/<pk>/close/` | Close PR |
+| POST | `/<pk>/reopen/` | Reopen PR |
+| POST | `/<pk>/ready-for-review/` | Mark ready |
+| POST | `/<pk>/convert-to-draft/` | Convert to draft |
+| GET | `/<pk>/diff/` | Precomputed diff |
+| GET, PATCH | `/<pk>/viewed-files/` | Track viewed files |
+| GET, POST | `/<pk>/reviews/` | List/create reviews |
+
+### Issues (`/api/repositories/<slug>/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET, POST | `/issues/` | List/create issues |
+| GET, PUT, DELETE | `/issues/<pk>/` | Issue CRUD |
+| POST | `/issues/<pk>/assign/` | Assign user |
+| GET, POST | `/labels/` | Label management |
+
+### Activity (`/api/repositories/<slug>/activity/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Activity feed |
+
+### Notifications (`/api/notifications/`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | List notifications |
+| POST | `/mark_all_read/` | Mark all as read |
+| DELETE | `/clear_all/` | Clear all |
+| POST | `/<pk>/mark_read/` | Mark single as read |
+| GET | `/unread_count/` | Unread count |
+
+## Database Models
+
+### Core Relationships
+```
+CustomUser (accounts)
+    ├── Repository (owner)
+    ├── Issue (creator, assignees)
+    ├── PullRequest (created_by, merged_by)
+    ├── Review (reviewer)
+    └── Comment (author)
+
+Repository
+    ├── RepositoryMember (many-to-many through)
+    ├── Branches
+    ├── Issue
+    ├── PullRequest
+    └── Label
+
+PullRequest
+    ├── source_branch, target_branch
+    ├── Review
+    └── PullRequestViewedFile
+
+Issue
+    ├── labels (many-to-many)
+    ├── assignees (many-to-many)
+    └── parent (self-referential for subtasks)
+
+Comment (Polymorphic)
+    ├── content_type, object_id (GenericForeignKey)
+    └── parent (threaded replies)
+```
 
 ## Getting Started
 
 ### Prerequisites
+- Python 3.13+
+- Node.js 22+
+- Redis 7+
+- PostgreSQL (production) or SQLite (development)
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-- [Node.js 22+](https://nodejs.org/) with [pnpm](https://pnpm.io/) (for local frontend development)
-- [Python 3.11+](https://www.python.org/) (for local backend development)
-
-### Local Development
-
-**Frontend:**
+### Using Docker Compose (Recommended)
 
 ```bash
-cd frontend
-pnpm install
-pnpm dev
+# Clone the repository
+git clone https://github.com/your-username/CollabHub.git
+cd CollabHub
+
+# Create backend environment file
+cp backend/.env.example backend/.env
+# Edit backend/.env with your values
+
+# Build and run all services
+docker compose up --build
+
+# Services available at:
+# - Frontend: http://localhost:5173
+# - Backend API: http://localhost:8001
+# - Redis: localhost:6379
 ```
 
-**Backend:**
+### Manual Setup
+
+#### Backend
 
 ```bash
 cd backend
+
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate   # or venv\Scripts\activate on Windows
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run migrations
 python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Start development server
 python manage.py runserver
+
+# In another terminal, start Celery worker
+celery -A config worker --loglevel=info
 ```
 
-### Local Development (Docker Compose)
+#### Frontend
 
 ```bash
-# 1. Start all services
-docker compose up -d --build
+cd frontend
 
-# 2. Access the application
-open http://localhost:5173
+# Install dependencies
+pnpm install
+# or: npm install
+
+# Start development server
+pnpm dev
+# or: npm run dev
 ```
 
----
+### Environment Variables
 
-## Environment Variables
+Create `backend/.env`:
 
-### Backend (`backend/.env`)
+```env
+# Required
+SECRET_KEY=your-secret-key
+DEBUG=True
 
-| Variable | Description | Default |
-|---|---|---|
-| `DJANGO_SECRET_KEY` | Django secret key | *required* |
-| `DEBUG` | Enable debug mode | `True` |
-| `ALLOWED_HOSTS` | Comma-separated list of allowed hosts | `localhost,127.0.0.1` |
-| `DATABASE_URL` | PostgreSQL connection string (optional) | SQLite fallback |
-| `CELERY_BROKER_URL` | Redis broker URL | `redis://127.0.0.1:6379/0` |
-| `CELERY_RESULT_BACKEND` | Redis result backend URL | `redis://127.0.0.1:6379/0` |
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | — |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | — |
-| `MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID | — |
-| `MICROSOFT_CLIENT_SECRET` | Microsoft OAuth client secret | — |
-| `FRONTEND_URL` | Frontend origin URL | `http://localhost:5173` |
-| `SECURE_SSL_REDIRECT` | Enforce HTTPS redirects | `false` |
+# Database (production)
+DATABASE_URL=postgres://user:password@host:5432/dbname
 
-### Frontend (`frontend/.env`)
+# Redis
+REDIS_URL=redis://127.0.0.1:6379/0
+CELERY_BROKER_URL=redis://127.0.0.1:6379/0
 
-| Variable | Description | Default |
-|---|---|---|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8001/api` |
-| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID | — |
-| `VITE_MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID | — |
-| `VITE_OAUTH_REDIRECT_URI` | OAuth callback URL | `http://localhost:5173/auth/callback` |
+# OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+MICROSOFT_CLIENT_ID=your-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
 
----
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
+```
+
+## Testing
+
+Each Django app contains a `tests/` directory with comprehensive test coverage:
+
+```bash
+# Run all tests
+python manage.py test
+
+# Run tests for specific app
+python manage.py test accounts
+python manage.py test repositories
+python manage.py test PullRequest
+```
 
 ## API Documentation
 
-When the backend is running, interactive API documentation is available at:
-
-| Format | URL |
-|---|---|
-| Swagger UI | `http://localhost:8001/api/docs/` |
-| ReDoc | `http://localhost:8001/api/redoc/` |
-| OpenAPI Schema | `http://localhost:8001/api/schema/` |
-
-### Principal API Endpoints
-
-| Resource | Endpoint |
-|---|---|
-| Authentication | `/api/accounts/` |
-| Repositories | `/api/repositories/` |
-| Branches | `/api/repositories/:slug/branches/` |
-| Pull Requests | `/api/repositories/:slug/pull-requests/` |
-| Issues | `/api/repositories/:slug/issues/` |
-| Comments | `/api/repositories/:slug/comments/` |
-| Activity | `/api/repositories/:slug/activity/` |
-| Notifications | `/api/notifications/` |
-
----
+Access the OpenAPI schema at `/api/schema/` and Swagger UI at `/api/docs/` when the backend is running.
 
 ## Deployment
 
-CollabHub is designed to run on minimal infrastructure. The recommended deployment target is a **Google Compute Engine e2-micro instance** (1 vCPU, 1 GB RAM) using Docker Compose.
+### Production Configuration
 
-The Docker Compose configuration includes:
-- **Nginx** — reverse proxy serving the React SPA and forwarding API requests to Django
-- **Backend** — Django application served by Gunicorn with a single worker
-- **Celery** — asynchronous task worker with concurrency of 1
-- **Redis** — message broker with memory-limited configuration
+The application is configured for deployment on Render PaaS:
 
-All containers are configured with logging limits and restart policies for unattended operation.
+- **Database**: PostgreSQL with SSL
+- **Redis**: Upstash Redis (rediss://)
+- **Static Files**: Whitenoise
+- **ASGI Server**: Daphne
+- **Security**: SSL enforcement, secure cookies, CSRF protection
 
----
+### Docker Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| redis | Redis 7 Alpine | 6379 (internal) |
+| backend | Daphne ASGI server | 8001 |
+| celery | Celery worker | - |
+| frontend | React dev server | 5173 |
+
+### CI/CD
+
+- Daily PostgreSQL database backups via GitHub Actions
+- 30-day artifact retention
+- Automated backup scripts
+
+## Architecture Highlights
+
+### Event-Driven System
+- Decoupled event handlers for notifications and activity logging
+- Handler registry with decorator-based registration
+- Event types: PR_CREATED, PR_MERGED, ISSUE_CREATED, etc.
+
+### Async Task Processing
+- Celery-powered background tasks
+- Async file upload processing
+- Precomputed diff generation
+- Activity logging
+
+### Real-Time Updates
+- Django Channels with Redis channel layer
+- WebSocket connections for live updates
+- Automatic reconnection handling
+
+### Authentication Flow
+- JWT tokens in HTTP-only cookies
+- Access token: 15 minutes
+- Refresh token: 1 day
+- Token rotation and blacklisting
+- OAuth 2.0 with PKCE (Google)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is developed for educational and portfolio purposes.
+This project is open source and available under the MIT License.
