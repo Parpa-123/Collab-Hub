@@ -164,7 +164,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-channel_redis_url = os.getenv("CHANNEL_REDIS_URL", "redis://127.0.0.1:6379/1")
+redis_url_env = os.getenv("REDIS_URL", "")
+channel_redis_url = os.getenv("CHANNEL_REDIS_URL") or redis_url_env or "redis://127.0.0.1:6379/1"
 if channel_redis_url.startswith("rediss://"):
     import ssl
     CHANNEL_LAYERS = {
@@ -341,8 +342,8 @@ if not DEBUG:
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL") or redis_url_env or "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND") or redis_url_env or "redis://127.0.0.1:6379/0"
 
 if CELERY_BROKER_URL.startswith("rediss://") and "ssl_cert_reqs" not in CELERY_BROKER_URL:
     sep = "&" if "?" in CELERY_BROKER_URL else "?"
