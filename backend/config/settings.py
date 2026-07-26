@@ -164,14 +164,29 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("CHANNEL_REDIS_URL", "redis://127.0.0.1:6379/1")],
+channel_redis_url = os.getenv("CHANNEL_REDIS_URL", "redis://127.0.0.1:6379/1")
+if channel_redis_url.startswith("rediss://"):
+    import ssl
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [{
+                    "address": channel_redis_url,
+                    "ssl_cert_reqs": ssl.CERT_NONE,
+                }],
+            },
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [channel_redis_url],
+            },
+        },
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -327,13 +342,19 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+
+if CELERY_BROKER_URL.startswith("rediss://") and "ssl_cert_reqs" not in CELERY_BROKER_URL:
+    sep = "&" if "?" in CELERY_BROKER_URL else "?"
+    CELERY_BROKER_URL = f"{CELERY_BROKER_URL}{sep}ssl_cert_reqs=none"
+
+if CELERY_RESULT_BACKEND.startswith("rediss://") and "ssl_cert_reqs" not in CELERY_RESULT_BACKEND:
+    sep = "&" if "?" in CELERY_RESULT_BACKEND else "?"
+    CELERY_RESULT_BACKEND = f"{CELERY_RESULT_BACKEND}{sep}ssl_cert_reqs=none"
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
-
 CELERY_TIMEZONE = "UTC"
 
 LOGGING = {
