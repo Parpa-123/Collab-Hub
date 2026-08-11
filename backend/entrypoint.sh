@@ -45,8 +45,8 @@ if [ "$#" -eq 0 ]; then
 fi
 
 if [ "$1" != "celery" ]; then
-    echo "Starting Celery worker in background..."
-    celery -A config worker --loglevel=info --concurrency=1 &
+    echo "Starting Celery worker & beat in background..."
+    celery -A config worker --beat --loglevel=info --concurrency=1 &
 fi
 
 echo "Starting application server: $*"

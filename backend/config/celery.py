@@ -1,5 +1,4 @@
 import os
-
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.
@@ -12,6 +11,14 @@ app = Celery('config')
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Configure Celery Beat schedule for 45-second periodic tasks
+app.conf.beat_schedule = {
+    'ping-health-endpoint-every-45-seconds': {
+        'task': 'common.tasks.ping_health_endpoint',
+        'schedule': 45.0,
+    },
+}
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
