@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Copy,
   Check,
+  Download,
 } from "lucide-react";
 import { errorToast } from "../../lib/toast";
 
@@ -102,6 +103,39 @@ const FileViewer = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      const res = await connect.get(`/repositories/${slug}/download-file/`, {
+        params: { path: filePath, branch },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = res.headers['content-disposition'];
+      let filename = fileName;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch.length === 2) {
+          filename = filenameMatch[1];
+        }
+      }
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      errorToast(err, "Failed to download file");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   /* ── Breadcrumb segments ── */
   const segments = filePath.split("/").filter(Boolean);
   const fileName = segments[segments.length - 1] ?? filePath;
@@ -180,23 +214,39 @@ const FileViewer = () => {
           </span>
         </div>
 
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1.5 hover:bg-accent transition-colors"
-          title="Copy file contents"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-green-600" />
-              <span className="text-green-600">Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              Copy
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1.5 hover:bg-accent transition-colors"
+            title="Copy file contents"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-green-600">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                Copy
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1.5 hover:bg-accent transition-colors disabled:opacity-50"
+            title="Download file"
+          >
+            {downloading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            Download
+          </button>
+        </div>
       </div>
 
       {/* ── File Content Rendering ── */}

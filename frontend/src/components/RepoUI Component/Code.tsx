@@ -25,6 +25,39 @@ const Code = () => {
     setSearchParams({ branch: newBranch });
   };
 
+  const [downloadingZip, setDownloadingZip] = React.useState(false);
+
+  const handleDownloadZip = async () => {
+    try {
+      setDownloadingZip(true);
+      const res = await connect.get(`/repositories/${slug}/download-zip/`, {
+        params: { branch: selectedBranch },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = res.headers['content-disposition'];
+      let filename = `${repoData?.name || 'repository'}-${selectedBranch}.zip`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch.length === 2) {
+          filename = filenameMatch[1];
+        }
+      }
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      errorToast(error, "Failed to download repository");
+    } finally {
+      setDownloadingZip(false);
+    }
+  };
+
   React.useEffect(() => {
     const fetchRepoData = async () => {
       try {
@@ -82,6 +115,13 @@ const Code = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleDownloadZip}
+                  disabled={downloadingZip}
+                  className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  {downloadingZip ? "Preparing ZIP..." : "Download ZIP"}
+                </button>
                 <FileUploadCommit
                   slug={slug!}
                   defaultBranch={selectedBranch}

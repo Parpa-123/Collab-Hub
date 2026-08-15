@@ -1,5 +1,15 @@
 from django.urls import path
-from .views import RepositoryViewSet, RepositoryDetailView, OptionAPIView, RepositoryTree, FileContent, CommitDiffView, PublicRepositoryViewSet
+from .views import (
+    RepositoryViewSet,
+    RepositoryDetailView,
+    OptionAPIView,
+    RepositoryTree,
+    FileContent,
+    CommitDiffView,
+    PublicRepositoryViewSet,
+    DownloadRepositoryZipView,
+    DownloadFileView
+)
 
 app_name = 'repositories'
 
@@ -21,6 +31,8 @@ urlpatterns = [
     path('<slug:slug>/async-file-upload/', RepositoryDetailView.as_view({'post': 'async_file_upload'}), name='repository-async-file-upload'),
     path('<slug:slug>/upload-status/<str:task_id>/', RepositoryDetailView.as_view({'get': 'upload_status'}), name='repository-upload-status'),
     path('<slug:slug>/file-content/', FileContent.as_view(), name='repository-file-content'),
+    path('<slug:slug>/download-zip/', DownloadRepositoryZipView.as_view(), name='download-zip'),
+    path('<slug:slug>/download-file/', DownloadFileView.as_view(), name='download-file'),
     path('<slug:slug>/commit-diff/', CommitDiffView.as_view(), name='repository-commit-diff'),
     path('<slug:slug>/missing-objects/', RepositoryDetailView.as_view({'post': 'missing_objects'}), name='repository-missing-objects'),
     path('<slug:slug>/push/', RepositoryDetailView.as_view({'post': 'push'}), name='repository-push'),

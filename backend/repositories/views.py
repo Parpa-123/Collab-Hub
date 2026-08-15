@@ -676,6 +676,106 @@ class FileContent(APIView):
         content = node.blob.content if node.blob else ""
         return Response({'content' : content},status = status.HTTP_200_OK)
 
+
+from django.http import StreamingHttpResponse, HttpResponse
+import datetime
+import stat
+
+class DownloadRepositoryZipView(APIView):
+    def get(self, request, slug):
+        branch_name = request.query_params.get("branch")
+        repository = Repository.objects.filter(slug=slug).first()
+        if not repository:
+            return Response({'error' : 'Repository not found'}, status = status.HTTP_404_NOT_FOUND)
+
+        if repository.visibility != Repository.Visibility.PUBLIC:
+            if not IsRepositoryMember().has_object_permission(request, self, repository):
+                return Response({"message": "You are not authorized to download this repository"}, status=status.HTTP_403_FORBIDDEN)
+
+        if branch_name:
+            branch = Branches.objects.filter(repository__slug=slug, name=branch_name).first()
+            if not branch or not branch.head_commit:
+                return Response({'error' : 'Branch or commit not found'}, status=status.HTTP_404_NOT_FOUND)
+            commit = branch.head_commit
+        else:
+            commit = Commit.objects.filter(repository__slug=slug).order_by('-created_at').first()
+
+        if not commit or not hasattr(commit, 'tree'):
+            return Response({'error' : 'No commit found'},status = status.HTTP_404_NOT_FOUND)
+        
+        nodes = TreeNode.objects.filter(tree=commit.tree, type='file').select_related('blob')
+
+        try:
+            from stream_zip import stream_zip, ZIP_32
+            
+            def generate_zip_chunks():
+                now = datetime.datetime.now()
+                for node in nodes:
+                    if node.blob:
+                        # stream_zip expects an iterable of chunks for the file content
+                        yield (
+                            node.path, 
+                            now, 
+                            stat.S_IFREG | 0o644, 
+                            ZIP_32,
+                            (node.blob.content.encode('utf-8'),)
+                        )
+                        
+            response = StreamingHttpResponse(stream_zip(generate_zip_chunks()), content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{repository.name}-{branch.name if branch_name else "main"}.zip"'
+            return response
+            
+        except ImportError:
+            # Fallback if stream-zip is not installed
+            import zipfile
+            import io
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for node in nodes:
+                    if node.blob:
+                        zip_file.writestr(node.path, node.blob.content)
+            
+            response = HttpResponse(buffer.getvalue(), content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{repository.name}-{branch.name if branch_name else "main"}.zip"'
+            return response
+
+
+class DownloadFileView(APIView):
+    def get(self, request, slug):
+        path = request.query_params.get("path")
+        branch_name = request.query_params.get("branch")
+        repository = Repository.objects.filter(slug=slug).first()
+        if not repository:
+            return Response({'error' : 'Repository not found'}, status = status.HTTP_404_NOT_FOUND)
+
+        if repository.visibility != Repository.Visibility.PUBLIC:
+            if not IsRepositoryMember().has_object_permission(request, self, repository):
+                return Response({"message": "You are not authorized to download this file"}, status=status.HTTP_403_FORBIDDEN)
+
+        if not path:
+            return Response({'error' : 'Path is required'},status = status.HTTP_400_BAD_REQUEST)
+        
+        if branch_name:
+            branch = Branches.objects.filter(repository__slug=slug, name=branch_name).first()
+            if not branch or not branch.head_commit:
+                return Response({'error' : 'Branch or commit not found'}, status=status.HTTP_404_NOT_FOUND)
+            commit = branch.head_commit
+        else:
+            commit = Commit.objects.filter(repository__slug=slug).order_by('-created_at').first()
+
+        if not commit or not hasattr(commit, 'tree'):
+            return Response({'error' : 'No commit found'},status = status.HTTP_404_NOT_FOUND)
+        
+        node = TreeNode.objects.filter(tree=commit.tree, path=path).first()
+        if not node or not node.blob:
+            return Response({'error' : 'File not found'},status = status.HTTP_404_NOT_FOUND)
+        
+        response = HttpResponse(node.blob.content.encode('utf-8'), content_type='application/octet-stream')
+        # Extract filename from path (e.g. src/App.tsx -> App.tsx)
+        filename = path.split('/')[-1] if '/' in path else path
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
 class CommitDiffView(APIView):
     # Allow public repository access; require repo membership for private repos
 
