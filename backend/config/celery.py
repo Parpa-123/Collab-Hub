@@ -12,11 +12,11 @@ app = Celery('config')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Configure Celery Beat schedule for 45-second periodic tasks
+# Configure Celery Beat schedule for 180-second periodic tasks
 app.conf.beat_schedule = {
-    'ping-health-endpoint-every-45-seconds': {
+    'ping-health-endpoint-every-180-seconds': {
         'task': 'common.tasks.ping_health_endpoint',
-        'schedule': 45.0,
+        'schedule': 180.0,
     },
 }
 
