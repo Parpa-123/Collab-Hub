@@ -34,7 +34,7 @@ def get_health_target_url() -> str:
 
 @shared_task(name="common.tasks.ping_health_endpoint")
 def ping_health_endpoint():
-    """Periodic task running every 180 seconds to ping health check endpoint."""
+    """Periodic task running every 600 seconds to ping health check endpoint."""
     target_url = get_health_target_url()
     
     headers = {
