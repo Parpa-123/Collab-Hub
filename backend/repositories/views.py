@@ -46,15 +46,6 @@ class RepositoryViewSet(ModelViewSet):
             )
         )
 
-class PublicRepositoryViewSet(ModelViewSet):
-    permission_classes = []
-    serializer_class = RepositoryListSerializer
-    
-    def get_queryset(self):
-        return Repository.objects.filter(visibility=Repository.Visibility.PUBLIC).distinct()
-
-
-    
     @action(detail=True, methods=['get'], url_path="members")
     def get_members(self, request, slug=None):
         repository = self.get_object()
@@ -82,6 +73,13 @@ class PublicRepositoryViewSet(ModelViewSet):
         if self.action == "list":
             return RepositoryListSerializer
         return super().get_serializer_class()
+
+class PublicRepositoryViewSet(ModelViewSet):
+    permission_classes = []
+    serializer_class = RepositoryListSerializer
+    
+    def get_queryset(self):
+        return Repository.objects.filter(visibility=Repository.Visibility.PUBLIC).distinct()
 
 class RepositoryDetailView(ModelViewSet):
     
