@@ -21,8 +21,13 @@ class CanManageBranches(BasePermission):
             return False
         
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
             return get_repo_membership(request.user, repository) is not None
         
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
         if request.method == 'POST':
             return can_perform_action(request.user, repository, CREATE_BRANCH)
             
@@ -36,7 +41,12 @@ class CanManageBranches(BasePermission):
         repository = obj.repository
         
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
             return get_repo_membership(request.user, repository) is not None
+            
+        if not request.user or not request.user.is_authenticated:
+            return False
         
         if request.method == 'DELETE':
             return can_perform_action(request.user, repository, DELETE_BRANCH)
@@ -49,7 +59,7 @@ class CanManageBranches(BasePermission):
 
 class BranchesViewSet(viewsets.ModelViewSet):
     serializer_class = BranchesSerializer
-    permission_classes = [IsAuthenticated, CanManageBranches]
+    permission_classes = [CanManageBranches]
 
     def get_queryset(self):
         return Branches.objects.filter(repository__slug=self.kwargs['slug'])
@@ -69,6 +79,9 @@ class IsRepoMember(BasePermission):
             repository = Repository.objects.get(slug=slug)
         except Repository.DoesNotExist:
             return False
+        if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
         return get_repo_membership(request.user, repository) is not None
 
 
@@ -76,7 +89,7 @@ class CommitViewSet(viewsets.ModelViewSet):
     """ViewSet for listing, creating, and retrieving commits on a branch."""
 
     serializer_class = CommitSerializer
-    permission_classes = [IsAuthenticated, IsRepoMember]
+    permission_classes = [IsRepoMember]
     http_method_names = ['get', 'post', 'head', 'options']
 
     def get_queryset(self):

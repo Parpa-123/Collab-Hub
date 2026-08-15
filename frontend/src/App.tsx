@@ -17,6 +17,7 @@ import NotFound from "./404 section/404";
 import PRDetailed from "./components/RepoUI Component/PRDetailed";
 import FileViewer from "./components/RepoUI Component/FileViewer";
 import OAuthCallback from "./components/OAuthCallback";
+import Explore from "./components/Explore";
 import Repositories from "./components/Repositories";
 
 function App() {
@@ -32,15 +33,16 @@ function App() {
                 <Route path="auth/callback" element={<OAuthCallback />} />
                 <Route path="profile" element={<ProtectedRouting><Profile /></ProtectedRouting>} />
                 <Route path="repositories" element={<ProtectedRouting><Repositories /></ProtectedRouting>} />
+                <Route path="explore" element={<Explore />} />
                 <Route path="new" element={<ProtectedRouting><Repo /></ProtectedRouting>} />
-                <Route path=":slug" element={<ProtectedRouting><MainLayout /></ProtectedRouting>}>
-                  <Route index element={<ProtectedRouting><Code /></ProtectedRouting>} />
-                  <Route path="branches" element={<ProtectedRouting><Branches /></ProtectedRouting>} />
-                  <Route path="pullrequests" element={<ProtectedRouting><PullRequest /></ProtectedRouting>} />
-                  <Route path="pullrequests/:id" element={<ProtectedRouting><PRDetailed /></ProtectedRouting>} />
-                  <Route path="issues" element={<ProtectedRouting><Issues /></ProtectedRouting>} />
-                  <Route path="issues/:id" element={<ProtectedRouting><IssueDetail /></ProtectedRouting>} />
-                  <Route path="blob" element={<ProtectedRouting><FileViewer /></ProtectedRouting>} />
+                <Route path=":slug" element={<MainLayout />}>
+                  <Route index element={<Code />} />
+                  <Route path="branches" element={<Branches />} />
+                  <Route path="pullrequests" element={<PullRequest />} />
+                  <Route path="pullrequests/:id" element={<PRDetailed />} />
+                  <Route path="issues" element={<Issues />} />
+                  <Route path="issues/:id" element={<IssueDetail />} />
+                  <Route path="blob" element={<FileViewer />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Route>

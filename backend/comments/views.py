@@ -51,6 +51,8 @@ class CommentPermission(BasePermission):
 
         # READ
         if request.method in SAFE_METHODS:
+            if repo and getattr(repo, 'visibility', None) == 'public':
+                return True
             return can_perform_action(request.user, repo, COMMENT)
 
         # UPDATE (author only)

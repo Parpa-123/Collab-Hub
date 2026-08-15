@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Repository, RepositoryMember
 from .serializers import RepositoryCreateSerializer, ViewRepositorySerializer, RepositoryListSerializer, AddMemberSerializer, UserSearchSerializer, UpdateMemberRoleSerializer, RepositoryMemberSerializer, FileUploadSerializer
-from .permissions import IsRepositoryAdmin, IsRepositoryMember, IsMaintainer
+from .permissions import IsRepositoryAdmin, IsRepositoryMember, IsMaintainer, IsPublicOrRepositoryMember
 from django.db import transaction
 from branches.models import Branches, Commit
 from rest_framework.decorators import action
@@ -37,8 +37,7 @@ class RepositoryViewSet(ModelViewSet):
         user = self.request.user
         return Repository.objects.filter(
             Q(owner=user) |
-            Q(repositoryMembers__developer=user) |
-            Q(visibility=Repository.Visibility.PUBLIC)
+            Q(repositoryMembers__developer=user)
         ).distinct().annotate(
             my_role=Subquery(
                 RepositoryMember.objects.filter(
@@ -46,6 +45,14 @@ class RepositoryViewSet(ModelViewSet):
                 ).values('role')[:1]
             )
         )
+
+class PublicRepositoryViewSet(ModelViewSet):
+    permission_classes = []
+    serializer_class = RepositoryListSerializer
+    
+    def get_queryset(self):
+        return Repository.objects.filter(visibility=Repository.Visibility.PUBLIC).distinct()
+
 
     
     @action(detail=True, methods=['get'], url_path="members")
@@ -78,24 +85,28 @@ class RepositoryViewSet(ModelViewSet):
 
 class RepositoryDetailView(ModelViewSet):
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsPublicOrRepositoryMember]
     serializer_class = ViewRepositorySerializer
     lookup_field = 'slug'
     
 
     def get_queryset(self):
         user = self.request.user
-        return Repository.objects.filter(
-            Q(owner=user) |
-            Q(repositoryMembers__developer=user) |
-            Q(visibility=Repository.Visibility.PUBLIC)
-        ).distinct().annotate(
-            my_role=Subquery(
-                RepositoryMember.objects.filter(
-                    repository=OuterRef('pk'), developer=user
-                ).values('role')[:1]
-            )
-        ).prefetch_related('branches')
+        queryset = Repository.objects.all()
+        if user.is_authenticated:
+            return queryset.filter(
+                Q(owner=user) |
+                Q(repositoryMembers__developer=user) |
+                Q(visibility=Repository.Visibility.PUBLIC)
+            ).distinct().annotate(
+                my_role=Subquery(
+                    RepositoryMember.objects.filter(
+                        repository=OuterRef('pk'), developer=user
+                    ).values('role')[:1]
+                )
+            ).prefetch_related('branches')
+        else:
+            return queryset.filter(visibility=Repository.Visibility.PUBLIC).distinct().prefetch_related('branches')
 
     @action(detail=True, methods=['get'], url_path="members")
     def list_members(self, request, slug=None):
@@ -556,7 +567,7 @@ class RepositoryDetailView(ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
     def get_permissions(self):
         if self.action == "retrieve":
-            return [IsRepositoryMember(), IsAuthenticated()]
+            return [IsPublicOrRepositoryMember()]
         if self.action in ["update", "partial_update"]:
             return [IsMaintainer(), IsAuthenticated()]
         if self.action == "destroy":

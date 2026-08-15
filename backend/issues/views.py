@@ -24,9 +24,14 @@ class IssueManagePermission(permissions.BasePermission):
             return False
 
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
             from config.access.services import get_repo_membership
             return get_repo_membership(request.user, repository) is not None
         
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
         if request.method == 'POST':
             return can_perform_action(request.user, repository, CREATE_ISSUE)
         
@@ -78,7 +83,7 @@ class LabelManagePermission(permissions.BasePermission):
 class IssueViewSet(viewsets.ModelViewSet, IssueManagePermission):
     
     serializer_class = IssueSerializer
-    permission_classes = [IssueManagePermission, permissions.IsAuthenticated]
+    permission_classes = [IssueManagePermission]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = IssueFilter
     search_fields = ["title", "description"]

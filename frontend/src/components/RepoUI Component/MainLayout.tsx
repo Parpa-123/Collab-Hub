@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
 import connect from "../../axios/connect";
+import { userContext } from "../../Context/userContext";
 import { errorToast, successToast } from "../../lib/toast";
+import { useContext } from "react";
 import type { RepoStruct } from "../Profile Components/UserProfile";
 import NotFound from "../../404 section/404";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ interface Member {
 }
 
 const MainLayout = () => {
+  const { login } = useContext(userContext);
   const { slug } = useParams();
 
   const [repo, setRepo] = useState<RepoStruct | null>(null);
@@ -66,11 +69,16 @@ const MainLayout = () => {
   };
 
   const fetchMyRole = async () => {
+    if (!login) return;
     try {
       const res = await connect.get(`/repositories/${slug}/my-role/`);
       setMyRole(res.data.role);
-    } catch (err) {
-      errorToast(err, "Failed to load your role");
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setMyRole(null);
+      } else {
+        errorToast(err, "Failed to load your role");
+      }
     }
   };
 
@@ -78,7 +86,7 @@ const MainLayout = () => {
     fetchRepo();
     fetchMembers();
     fetchMyRole();
-  }, [slug]);
+  }, [slug, login]);
 
   const handleSearch = useCallback(async (query = searchQuery, signal?: AbortSignal) => {
     const trimmedQuery = query.trim();

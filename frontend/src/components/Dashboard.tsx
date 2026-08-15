@@ -11,6 +11,8 @@ import { errorToast } from "../lib/toast";
 import type { NotificationItem, Repo } from "./dashboard/types";
 import { Spinner } from "@/components/ui/spinner";
 
+import { Link } from "react-router-dom";
+
 function DashboardLoading() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -22,12 +24,15 @@ function DashboardLoading() {
 function LoggedOutHero() {
   return (
     <div className="min-h-[70vh] px-4 flex items-center justify-center bg-muted">
-      <div className="w-full max-w-2xl rounded-md border border-border bg-card px-8 py-10 text-center shadow-sm">
+      <div className="w-full max-w-2xl rounded-md border border-border bg-card px-8 py-10 text-center shadow-sm flex flex-col items-center">
         <h1 className="text-3xl font-semibold text-foreground mb-2">Welcome to CollabHub</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-6">
           Track repositories, pull requests, issues, and discussions in one place.
-          Sign in to view your dashboard.
+          Sign in to view your dashboard, or explore public repositories.
         </p>
+        <Link to="/explore" className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+          Explore Public Repositories
+        </Link>
       </div>
     </div>
   );

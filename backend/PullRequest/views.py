@@ -30,18 +30,33 @@ class PullRequestHardenedPermission(permissions.BasePermission):
             repository = Repository.objects.get(slug=slug)
         except Repository.DoesNotExist:
             return False
+            
+        if request.method in permissions.SAFE_METHODS:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
         
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
         role = get_repo_role(request.user, repository)
         if not role:
             return False
 
-        if view.action in ['list', 'retrieve', 'create']:
-            return True
-
         return True
 
     def has_object_permission(self, request, view, obj):
-        role = get_repo_role(request.user, obj.repo)
+        repository = obj.repo if hasattr(obj, 'repo') else obj.pr.repo
+        
+        if request.method in permissions.SAFE_METHODS:
+            if repository.visibility == Repository.Visibility.PUBLIC:
+                return True
+                
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
+        role = get_repo_role(request.user, repository)
+        if not role:
+            return False
         
         if view.action in ['merge', 'approve', 'changes_requested']:
             if role not in [REPO_ADMIN, REPO_MAINTAINER]:
@@ -65,7 +80,7 @@ class PullRequestHardenedPermission(permissions.BasePermission):
 
 class PullRequestViewSet(viewsets.ModelViewSet):
     serializer_class = PullRequestSerializer
-    permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
+    permission_classes = [PullRequestHardenedPermission]
 
     def get_queryset(self):
         return PullRequest.objects.filter(
@@ -331,7 +346,7 @@ class PullRequestViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticated, PullRequestHardenedPermission]
+    permission_classes = [PullRequestHardenedPermission]
 
     def _dispatch_review_event(self, actor, review):
         event_type = PR_COMMENTED if review.status == "COMMENTED" else PR_REVIEWED
