@@ -1,0 +1,26 @@
+name: Backend Keep-Alive Ping
+
+on:
+  schedule:
+    # Run every 14 minutes to prevent Render free instance 15-minute idle spin-down
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    name: Ping Health Endpoint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Backend Health Endpoint
+        env:
+          TARGET_URL: ${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL || 'https://collab-hub-qu4h.onrender.com/api/health/' }}
+        run: |
+          echo "Sending keep-alive ping to: $TARGET_URL at $(date -u)"
+          HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -m 30 -L "$TARGET_URL")
+          echo "HTTP status response: $HTTP_RESPONSE"
+          if [ "$HTTP_RESPONSE" -eq 200 ]; then
+            echo "✅ Backend is warm and healthy."
+          else
+            echo "⚠️ Health check returned HTTP status $HTTP_RESPONSE. Server may be spinning up."
+          fi

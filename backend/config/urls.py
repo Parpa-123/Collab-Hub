@@ -25,7 +25,6 @@ from drf_spectacular.views import (
 from common.views import health_check
 
 urlpatterns = [
-    path("health/", health_check, name="health_check_root"),
     path("api/health/", health_check, name="health_check_api"),
     path("admin/", admin.site.urls),
     path("api/accounts/", include("accounts.urls")),

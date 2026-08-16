@@ -19,8 +19,10 @@ import FileViewer from "./components/RepoUI Component/FileViewer";
 import OAuthCallback from "./components/OAuthCallback";
 import Explore from "./components/Explore";
 import Repositories from "./components/Repositories";
+import useBackendKeepAlive from "./hooks/useBackendKeepAlive";
 
 function App() {
+  useBackendKeepAlive();
 
   return (
     <ThemeProvider>
