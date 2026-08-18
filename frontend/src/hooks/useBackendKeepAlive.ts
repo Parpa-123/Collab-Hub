@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const KEEP_ALIVE_INTERVAL_MS = 14 * 60 * 1000; // 14 minutes (Render idle timeout is 15 min)
+const KEEP_ALIVE_INTERVAL_MS = 4 * 60 * 1000; // 4 minutes
 const VISIBILITY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes cooldown between visibility change pings
 
 const getHealthUrl = (): string => {

@@ -2,8 +2,8 @@ name: Backend Keep-Alive Ping
 
 on:
   schedule:
-    # Run every 14 minutes to prevent Render free instance 15-minute idle spin-down
-    - cron: "*/14 * * * *"
+    # Run every 4 minutes to prevent Render free instance idle spin-down
+    - cron: "*/4 * * * *"
   workflow_dispatch:
 
 jobs:
