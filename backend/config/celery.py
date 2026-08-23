@@ -12,13 +12,7 @@ app = Celery('config')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Configure Celery Beat schedule for 600-second periodic tasks
-app.conf.beat_schedule = {
-    'ping-health-endpoint-every-600-seconds': {
-        'task': 'common.tasks.ping_health_endpoint',
-        'schedule': 600.0,
-    },
-}
+# Celery beat schedule has been removed.
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
