@@ -4,6 +4,8 @@ A full-stack Git-inspired collaboration platform for repository management, pull
 
 Live Demo: https://collab-hub-1.onrender.com
 
+Walkthrough: https://drive.google.com/file/d/164ckK6bGlf8k4LiqAJTWtRQd61a9-M-d/view?usp=sharing
+
 ## Overview
 
 CollabHub is an open-source developer collaboration platform built with Django REST Framework, Django Channels, Celery, and React 19. It provides Git-like content-addressable storage, real-time activity streaming, precomputed code diffs, polymorphic commenting, and comprehensive issue tracking.
