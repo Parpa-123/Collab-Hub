@@ -35,7 +35,6 @@ Walkthrough Video: https://drive.google.com/file/d/164ckK6bGlf8k4LiqAJTWtRQd61a9
 - Environment Variables
 - Testing and Quality Assurance
 - Production Deployment and CI/CD
-- License
 
 ---
 
@@ -687,9 +686,3 @@ pnpm lint
 2. Server Keep-Alive Workflow (`keep_alive.yml`):
    - Executes every 4 minutes (`*/4 * * * *`).
    - Dispatches an HTTP GET request to `/api/health/` using `curl` to keep server containers active and prevent free-tier inactivity sleeping.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
